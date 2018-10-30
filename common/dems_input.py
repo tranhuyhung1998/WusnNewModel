@@ -1,5 +1,5 @@
-import re, pickle, numpy as np
-from point import *
+import re, numpy as np
+
 
 class DemsInput:
     def __init__(self, _cols, _rows, _cellsize, _height):

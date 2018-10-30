@@ -1,5 +1,3 @@
-import time
-from input import *
 from GAwLS import *
 
 if __name__ == '__main__':

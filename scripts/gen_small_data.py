@@ -1,15 +1,15 @@
 import os, random, math
-from dems_input import *
+from common.dems_input import *
 from scipy import interpolate
 
 # Config
-W = 500.000
-H = 500.000
+W = 200.000
+H = 200.000
 depth = 1
 height = 10
-num_of_sensors = 100
-num_of_relays = 100
-Y = 10
+num_of_sensors = 40
+num_of_relays = 40
+Y = 4
 
 
 # Calculate height by interpolation
@@ -28,10 +28,10 @@ if __name__ == "__main__":
     
     for file_name in dems:
         inp = DemsInput.from_file("dems_data/" + str(file_name))
-        inp.scale(101, 101, 5)
-        print("Generating medium data for %s\n" % file_name)
+        inp.scale(41, 41, 5)
+        print("Generating small data for %s\n" % file_name)
         new_file_name = file_name.split('.')[0]
-        f = open("medium_data/" + new_file_name + ".in", "w")
+        f = open("small_data/" + new_file_name + ".in", "w")
         f.write(str(W) + " " + str(H) + "\n")
         f.write(str(depth) + " " + str(height) + "\n")
         f.write(str(num_of_relays) + " " + str(num_of_sensors) + " " + str(Y) + "\n")

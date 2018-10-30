@@ -1,5 +1,5 @@
-from point import *
-import os, pickle, gen_small_data, math
+from common.point import *
+import os, pickle, math
 
 # Unit: J
 E_Tx = 50*1e-9
@@ -11,6 +11,8 @@ k_bit = 4000
 
 # Radius
 R = 100
+
+
 class WusnInput:
     def __init__(self, _W, _H, _depth, _height, _num_of_relays, _num_of_sensors, _relays, _sensors, _Y, _base_station):
         self.W = _W
@@ -93,11 +95,11 @@ class WusnInput:
         BS = self.base_station
         for sn in self.sensors:
             for rn in self.relays:
-                if (distance(sn, rn) <= 2*R):
-                    sensor_loss[(sn, rn)] = k_bit*(E_Tx + e_fs*math.pow(distance(sn, rn), 2))
+                if distance(sn, rn) <= 2*R:
+                    sensor_loss[(sn, rn)] = k_bit * (E_Tx + e_fs * math.pow(distance(sn, rn), 2))
         
         for rn in self.relays:
-            relays_loss[rn] = k_bit*(E_Rx + e_fs*math.pow(distance(rn, BS), 2))
+            relays_loss[rn] = k_bit * (E_Rx + e_fs * math.pow(distance(rn, BS), 4))
         
         self.relay_loss = relays_loss
         self.sensor_loss = sensor_loss
@@ -108,5 +110,5 @@ class WusnInput:
 
 
 if __name__ == "__main__":
-    inp = WusnInput.from_file("small_data/dem1.in")
+    inp_ = WusnInput.from_file("small_data/dem1.in")
 

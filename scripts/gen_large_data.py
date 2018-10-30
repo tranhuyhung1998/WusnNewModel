@@ -1,5 +1,5 @@
 import os, random, math
-from dems_input import *
+from common.dems_input import *
 from scipy import interpolate
 
 # Config

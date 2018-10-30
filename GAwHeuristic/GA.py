@@ -6,7 +6,6 @@ import random, time, os, sys
 lib_path = os.path.abspath(os.path.join('..'))
 sys.path.append(lib_path)
 
-from input import *
 from .heuristic import *
 
 

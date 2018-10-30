@@ -1,7 +1,5 @@
-import time, os
 from GAwHeuristic import *
-from input import *
-from point import *
+from common.input import *
 
 if __name__ == "__main__":
     # inp = WusnInput.from_file("small_data/dem3.in")
