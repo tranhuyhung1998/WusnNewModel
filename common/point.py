@@ -23,13 +23,13 @@ class Point:
 
 
 class SensorNode(Point):
-    def __init__(self, _x, _y, _depth):
-        super().__init__(_x, _y, _depth)
+    def __init__(self, _x, _y, _z):
+        super().__init__(_x, _y, _z)
 
 
 class RelayNode(Point):
-    def __init__(self, _x, _y, _height):
-        super().__init__(_x, _y, _height)
+    def __init__(self, _x, _y, _z):
+        super().__init__(_x, _y, _z)
 
 
 def distance(p1: Point, p2: Point):

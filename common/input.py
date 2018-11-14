@@ -1,20 +1,24 @@
 from common.point import *
-import os, pickle, math
+import os, pickle, math, sys
+import json
+from pprint import pformat
+# lib_path = os.path.abspath(os.path.join('..'))
+# sys.path.append(lib_path)
 
 # Unit: J
 E_Tx = 50*1e-9
 E_Rx = 50*1e-9
 e_fs = 10*1e-12
+e_da = 10*1e-12
+e_mp = 0.0
 
 # Num of bits
 k_bit = 4000
 
-# Radius
-R = 100
 
 
 class WusnInput:
-    def __init__(self, _W, _H, _depth, _height, _num_of_relays, _num_of_sensors, _relays, _sensors, _Y, _base_station):
+    def __init__(self, _W, _H, _depth, _height, _num_of_relays, _num_of_sensors, _radius, _relays, _sensors, _BS):
         self.W = _W
         self.H = _H
         self.depth = _depth
@@ -23,49 +27,62 @@ class WusnInput:
         self.sensors = _sensors
         self.num_of_relays = _num_of_relays
         self.num_of_sensors = _num_of_sensors
-        self.Y = _Y
-        self.base_station = _base_station
+        self.radius = _radius
+        self.BS = _BS
         self.relay_loss = None
         self.sensor_loss = None
-        self.get_loss()
+        # self.get_loss()
+        self.calculate_loss()
 
     @classmethod
     def from_file(cls, path):
         f = open(path)
-        line1 = f.readline().split(' ')
-        W = float(line1[0])
-        H = float(line1[1])
-        line2 = f.readline().split(' ')
-        depth = float(line2[0])
-        height = float(line2[1])
-        line3 = f.readline().split(' ')
-        num_of_relays = int(line3[0])
-        num_of_sensors = int(line3[1])
-        Y = int(line3[2])
+        d = json.load(f)
+        return cls.from_dict(d)
+
+    @classmethod
+    def from_dict(cls, d):
+        W = d['W']
+        H = d['H']
+        depth = d['depth']
+        height = d['height']
+        num_of_relays = d['num_of_relays']
+        num_of_sensors = d['num_of_sensors']
+        radius = d['radius']
         relays = []
         sensors = []
-        for i in range(num_of_relays):
-            line = f.readline()[:-2].split(' ')
-            x = float(line[0])
-            y = float(line[1])
-            z = float(line[2])
-            relays.append(RelayNode(x, y, z))
+        BS = Point.from_dict(d['center'])
         for i in range(num_of_sensors):
-            line = f.readline()[:-2].split(' ')
-            x = float(line[0])
-            y = float(line[1])
-            z = float(line[2])
-            sensors.append(SensorNode(x, y, z))
-        BS_info = f.readline()[:-2].split(' ')
-        x_centa = float(BS_info[0])
-        y_centa = float(BS_info[1])
-        z_centa = float(BS_info[2])
-        BS = Point(x_centa, y_centa, z_centa)
-        return WusnInput(W, H, depth, height, num_of_relays, num_of_sensors, relays, sensors, Y, BS)
+            sensors.append(SensorNode.from_dict(d['sensors'][i]))
+        for i in range(num_of_relays):
+            relays.append(RelayNode.from_dict(d['relays'][i]))
+        # for _ in d['sensors']:
+        #     sensors.append(Point.from_dict(_))
+        # for _ in d['relays']:
+        #     relays.append(Point.from_dict(_))
+        return cls(W, H, depth, height, num_of_relays, num_of_sensors, radius, relays, sensors, BS)
+
+    def to_dict(self):
+        d = {}
+        d['W'] = self.W
+        d['H'] = self.H
+        d['depth'] = self.depth
+        d['height'] = self.height
+        d['num_of_relays'] = self.num_of_relays
+        d['num_of_sensors'] = self.num_of_sensors
+        d['relays'] = self.relays
+        d['sensors'] = self.sensors
+        d['center'] = self.BS
+        return d
+
+    def to_file(self, file_path):
+        d = self.to_dict()
+        with open(file_path, "wt") as f:
+            f.write(pformat(d))
 
     def get_loss(self):
         loss_file_name = str(hash(self)) + ".loss"
-        list_loss_file = os.listdir("cache")
+        list_loss_file = os.listdir("../cache")
         if loss_file_name in list_loss_file:
             print("Loading cache from %s" % loss_file_name)
             f = open("cache/" + loss_file_name, "rb")
@@ -92,23 +109,27 @@ class WusnInput:
     def calculate_loss(self):
         sensor_loss = {}
         relays_loss = {}
-        BS = self.base_station
+        R = self.radius
+        BS = self.BS
+        print(BS.x)
         for sn in self.sensors:
             for rn in self.relays:
                 if distance(sn, rn) <= 2*R:
                     sensor_loss[(sn, rn)] = k_bit * (E_Tx + e_fs * math.pow(distance(sn, rn), 2))
         
-        for rn in self.relays:
-            relays_loss[rn] = k_bit * (E_Rx + e_fs * math.pow(distance(rn, BS), 4))
+        # for rn in self.relays:
+        #     relays_loss[rn] = k_bit * (E_Rx + e_fs * math.pow(distance(rn, BS), 4))
         
         self.relay_loss = relays_loss
         self.sensor_loss = sensor_loss
 
     def __hash__(self):
-        return hash((self.W, self.H, self.depth, self.height, self.num_of_relays, self.num_of_sensors, 
-                    self.Y, tuple(self.relays), tuple(self.sensors)))
+        return hash((self.W, self.H, self.depth, self.height, self.num_of_relays, self.num_of_sensors, self.radius,
+                    tuple(self.relays), tuple(self.sensors)))
 
 
 if __name__ == "__main__":
-    inp_ = WusnInput.from_file("small_data/dem1.in")
+    inp = WusnInput.from_file('./small_data/dem1_0.in')
+    print(type(inp.sensors))
+    # print(inp.to_dict())
 

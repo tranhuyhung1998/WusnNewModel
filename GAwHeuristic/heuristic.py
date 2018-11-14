@@ -4,6 +4,16 @@ sys.path.append(lib_path)
 
 from common.input import *
 
+# Unit: J
+E_Tx = 50*1e-9
+E_Rx = 50*1e-9
+e_fs = 10*1e-12
+e_da = 10*1e-12
+e_mp = 0.0
+
+# Num of bits
+k_bit = 4000
+
 def get_relay_list(individual):
     relay_list = []
     ll = len(individual)

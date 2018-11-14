@@ -1,5 +1,6 @@
 from GAwHeuristic import *
 from common.input import *
+from common.point import *
 
 if __name__ == "__main__":
     # inp = WusnInput.from_file("small_data/dem3.in")
@@ -44,4 +45,3 @@ if __name__ == "__main__":
         f.write(str(end-start) + "s" + "\n")
         print()
     f.close()
-    
