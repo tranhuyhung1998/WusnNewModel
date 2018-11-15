@@ -31,8 +31,10 @@ class WusnInput:
         self.BS = _BS
         self.relay_loss = None
         self.sensor_loss = None
+        self.max_rn_conn = None
         # self.get_loss()
         self.calculate_loss()
+        self.calculate_max_rn_conn()
 
     @classmethod
     def from_file(cls, path):
@@ -105,6 +107,20 @@ class WusnInput:
             data = [self.relay_loss, self.sensor_loss]
             pickle.dump(data, f)
             f.close()
+    
+    
+
+    def calculate_max_rn_conn(self):
+        max_rn_conn = {}
+        R = self.radius
+        BS = self.BS
+
+        for rn in self.relays:
+            max_rn_conn[rn] = 0
+            for sn in self.sensors:
+                if distance(sn, rn) <= 2*R:
+                    max_rn_conn[rn] += 1 
+        self.max_rn_conn = max_rn_conn
 
     def calculate_loss(self):
         sensor_loss = {}
