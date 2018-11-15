@@ -1,6 +1,6 @@
 import json
 
-from common.input import WusnInput
+from .input import WusnInput
 from common.point import SensorNode, RelayNode
 
 
