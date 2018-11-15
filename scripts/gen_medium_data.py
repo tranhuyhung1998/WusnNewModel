@@ -1,7 +1,10 @@
-import os, random, math, sys
+import os, random, math, sys, json
 lib_path = os.path.abspath(os.path.join('..'))
 sys.path.append(lib_path)
 from common.dems_input import *
+from common.input import *
+from common.point import *
+from pprint import pformat
 from scipy import interpolate
 
 # Config
@@ -29,36 +32,43 @@ if __name__ == "__main__":
     
     for file_name in dems:
         inp = DemsInput.from_file("../dems_data/" + str(file_name))
-        print("Generating small data for %s\n" % file_name)
+        print("Generating medium data for %s\n" % file_name)
+        inp.scale(101, 101, 5)
         for r in range(len(radius)):
-            inp.scale(101, 101, 5)
-            new_file_name = file_name.split('.')[0]
-            f = open("../small_data/" + new_file_name  + "_" + str(r) + ".in", "w")
-            f.write(str(W) + " " + str(H) + "\n")
-            f.write(str(depth) + " " + str(height) + "\n")
-            f.write(str(num_of_relays) + " " + str(num_of_sensors) + "\n")
-            f.write(str(radius[r]) + "\n")
-
+            new_file_name = file_name.split('.')[0] + "_" + str(r)
+            data_dictionary = {}
+            data_dictionary['W'] = W
+            data_dictionary['H'] = H
+            data_dictionary['depth'] = depth
+            data_dictionary['height'] = height
+            data_dictionary['num_of_relays'] = num_of_relays
+            data_dictionary['num_of_sensors'] = num_of_sensors
+            data_dictionary['radius'] = radius[r]
+            data_dictionary['relays'] = []
+            data_dictionary['sensors'] = []
             x_centa = 0
             y_centa = 0
-
             for i in range(num_of_relays):
                 x = random.random() * W
                 y = random.random() * H
                 z = estimate(x, y, inp) + height
+                new_relay = RelayNode(x, y, z)
                 x_centa += x
                 y_centa += y
-                f.write(str(x) + " " + str(y) + " " + str(z) + "\n")
+                data_dictionary['relays'].append(new_relay.to_dict())
             for i in range(num_of_sensors):
                 x = random.random() * W
                 y = random.random() * H
                 z = estimate(x, y, inp) - depth
+                new_sensor = SensorNode(x, y, z)
                 x_centa += x
                 y_centa += y
-                f.write(str(x) + " " + str(y) + " " + str(z) + "\n")
+                data_dictionary['sensors'].append(new_sensor.to_dict())
             x_centa /= num_of_relays + num_of_sensors
             y_centa /= num_of_relays + num_of_sensors
             z_centa = estimate(x_centa, y_centa, inp)
-            f.write(str(x_centa) + " " + str(y_centa) + " " + str(z_centa) + "\n")
-            f.close()
-
+            data_dictionary['center'] = Point(x_centa, y_centa, z_centa).to_dict()
+            # inpp = WusnInput(W, H, depth, height, num_of_relays, num_of_sensors, data_dictionary['relays'], data_dictionary['sensors'], data_dictionary['center'])
+            
+            with open("../medium_data/" + new_file_name + ".in", "wt") as f:
+                f.write(json.dumps(data_dictionary, indent=2))

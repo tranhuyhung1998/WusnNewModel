@@ -6,15 +6,14 @@ from pprint import pformat
 # sys.path.append(lib_path)
 
 # Unit: J
-E_Tx = 50*1e-9
-E_Rx = 50*1e-9
+e_tx = 50*1e-9
+e_rx = 50*1e-9
 e_fs = 10*1e-12
-e_da = 10*1e-12
-e_mp = 0.0
+e_da = 5*1e-12
+e_mp = 0.0013*1e-12
 
 # Num of bits
 k_bit = 4000
-
 
 
 class WusnInput:
@@ -29,7 +28,8 @@ class WusnInput:
         self.num_of_sensors = _num_of_sensors
         self.radius = _radius
         self.BS = _BS
-        self.relay_loss = None
+        self.static_relay_loss = None
+        self.dynamic_relay_loss = None
         self.sensor_loss = None
         self.max_rn_conn = None
         # self.get_loss()
@@ -124,19 +124,22 @@ class WusnInput:
 
     def calculate_loss(self):
         sensor_loss = {}
-        relays_loss = {}
+        static_relay_loss = {}
+        dynamic_relay_loss = {}
         R = self.radius
         BS = self.BS
         print(BS.x)
         for sn in self.sensors:
             for rn in self.relays:
                 if distance(sn, rn) <= 2*R:
-                    sensor_loss[(sn, rn)] = k_bit * (E_Tx + e_fs * math.pow(distance(sn, rn), 2))
+                    sensor_loss[(sn, rn)] = k_bit * (e_tx + e_fs * math.pow(distance(sn, rn), 2))
         
-        # for rn in self.relays:
-        #     relays_loss[rn] = k_bit * (E_Rx + e_fs * math.pow(distance(rn, BS), 4))
+        for rn in self.relays:
+            dynamic_relay_loss[rn] = k_bit * (e_rx + e_da)
+            static_relay_loss[rn] = k_bit * e_mp * math.pow(distance(rn, BS), 4)
         
-        self.relay_loss = relays_loss
+        self.static_relay_loss = static_relay_loss
+        self.dynamic_relay_loss = dynamic_relay_loss
         self.sensor_loss = sensor_loss
 
     def __hash__(self):
@@ -146,6 +149,5 @@ class WusnInput:
 
 if __name__ == "__main__":
     inp = WusnInput.from_file('./small_data/dem1_0.in')
-    print(type(inp.sensors))
-    # print(inp.to_dict())
+    print(inp.relays[0])
 
