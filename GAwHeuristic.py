@@ -15,11 +15,11 @@ if __name__ == "__main__":
     # print(end-start)
 
     f = open("small_data_result.txt", "w")
-    file_list = os.listdir("small_data")
+    file_list = os.listdir("data/small_data")
     for file_name in file_list:
         print(str(file_name))
         f.write(file_name + "\n")
-        inp = WusnInput.from_file("small_data/" + str(file_name))
+        inp = WusnInput.from_file("data/small_data/" + str(file_name))
         start = time.time()
         res = GA(inp)
         end = time.time()

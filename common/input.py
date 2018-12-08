@@ -1,23 +1,28 @@
-from common.point import *
-import os, pickle, math, sys
 import json
-from pprint import pformat
-# lib_path = os.path.abspath(os.path.join('..'))
-# sys.path.append(lib_path)
+import math
+import os
+import pickle
 
-# Unit: J
-e_tx = 50*1e-9
-e_rx = 50*1e-9
-e_fs = 10*1e-12
-e_da = 5*1e-12
-e_mp = 0.0013*1e-12
+from collections import defaultdict
 
-# Num of bits
-k_bit = 4000
+from common.point import *
+
+
+class WusnConstants:
+    # Unit: J
+    e_tx = 50 * 1e-9
+    e_rx = 50 * 1e-9
+    e_fs = 10 * 1e-12
+    e_da = 5 * 1e-12
+    e_mp = 0.0013 * 1e-12
+
+    # Num of bits
+    k_bit = 4000
 
 
 class WusnInput:
-    def __init__(self, _W, _H, _depth, _height, _num_of_relays, _num_of_sensors, _radius, _relays, _sensors, _BS):
+    def __init__(self, _W=500, _H=500, _depth=1., _height=10., _num_of_relays=10, _num_of_sensors=50,
+                 _radius=20., _relays=None, _sensors=None, _BS=None):
         self.W = _W
         self.H = _H
         self.depth = _depth
@@ -31,7 +36,6 @@ class WusnInput:
         self.static_relay_loss = None
         self.dynamic_relay_loss = None
         self.sensor_loss = None
-        # self.get_loss()
         self.calculate_loss()
 
     @classmethod
@@ -56,82 +60,67 @@ class WusnInput:
             sensors.append(SensorNode.from_dict(d['sensors'][i]))
         for i in range(num_of_relays):
             relays.append(RelayNode.from_dict(d['relays'][i]))
-        # for _ in d['sensors']:
-        #     sensors.append(Point.from_dict(_))
-        # for _ in d['relays']:
-        #     relays.append(Point.from_dict(_))
+
         return cls(W, H, depth, height, num_of_relays, num_of_sensors, radius, relays, sensors, BS)
 
+    def freeze(self):
+        self.sensors = tuple(self.sensors)
+        self.relays = tuple(self.relays)
+
     def to_dict(self):
-        d = {}
-        d['W'] = self.W
-        d['H'] = self.H
-        d['depth'] = self.depth
-        d['height'] = self.height
-        d['num_of_relays'] = self.num_of_relays
-        d['num_of_sensors'] = self.num_of_sensors
-        d['relays'] = self.relays
-        d['sensors'] = self.sensors
-        d['center'] = self.BS
-        return d
+        return {
+            'W': self.W, 'H': self.H,
+            'depth': self.depth, 'height': self.height,
+            'num_of_relays': self.num_of_relays,
+            'num_of_sensors': self.num_of_sensors,
+            'relays': list(map(lambda x: x.to_dict(), self.relays)),
+            'sensors': list(map(lambda x: x.to_dict(), self.sensors)),
+            'center': self.BS.to_dict()
+        }
 
     def to_file(self, file_path):
         d = self.to_dict()
         with open(file_path, "wt") as f:
-            f.write(pformat(d))
+            fstr = json.dumps(d, indent=4)
+            f.write(fstr)
 
-    def get_loss(self):
-        loss_file_name = str(hash(self)) + ".loss"
-        list_loss_file = os.listdir("../cache")
-        if loss_file_name in list_loss_file:
-            print("Loading cache from %s" % loss_file_name)
-            f = open("cache/" + loss_file_name, "rb")
-            data = pickle.load(f)
-            self.relay_loss = data[0]
-            self.sensor_loss = data[1]
-        else:
-            print("Cache not found, calculating loss")
-            self.calculate_loss()
-
-    def create_cache(self):
-        loss_file_name = str(hash(self)) + ".loss"
-        list_loss_file = os.listdir("cache")
-        if loss_file_name in list_loss_file:
-            print("Cache exist")
-        else:
-            print("Creating cache")
-            f = open("cache/" + loss_file_name, "wb")
-            self.calculate_loss()
-            data = [self.relay_loss, self.sensor_loss]
-            pickle.dump(data, f)
-            f.close()
+    @property
+    def e_max(self):
+        vals = []
+        vals.extend(self.sensor_loss.values())
+        max_rloss = [WusnConstants.k_bit * (self.num_of_sensors * (WusnConstants.e_rx + WusnConstants.e_da) +
+                                            WusnConstants.e_fs * distance(rn, self.BS) ** 4) for rn in self.relays]
+        vals.extend(max_rloss)
+        return max(vals)
 
     def calculate_loss(self):
-        sensor_loss = {}
+        sensor_loss = defaultdict(lambda: float('inf'))
         static_relay_loss = {}
         dynamic_relay_loss = {}
         R = self.radius
         BS = self.BS
-        print(BS.x)
         for sn in self.sensors:
             for rn in self.relays:
-                if distance(sn, rn) <= 2*R:
-                    sensor_loss[(sn, rn)] = k_bit * (e_tx + e_fs * math.pow(distance(sn, rn), 2))
-        
+                if distance(sn, rn) <= 2 * R:
+                    sensor_loss[(sn, rn)] = WusnConstants.k_bit * (
+                            WusnConstants.e_tx + WusnConstants.e_fs * math.pow(distance(sn, rn), 2))
+
         for rn in self.relays:
-            dynamic_relay_loss[rn] = k_bit * (e_rx + e_da)
-            static_relay_loss[rn] = k_bit * e_mp * math.pow(distance(rn, BS), 4)
-        
+            dynamic_relay_loss[rn] = WusnConstants.k_bit * (WusnConstants.e_rx + WusnConstants.e_da)
+            static_relay_loss[rn] = WusnConstants.k_bit * WusnConstants.e_mp * math.pow(distance(rn, BS), 4)
+
         self.static_relay_loss = static_relay_loss
         self.dynamic_relay_loss = dynamic_relay_loss
         self.sensor_loss = sensor_loss
 
     def __hash__(self):
         return hash((self.W, self.H, self.depth, self.height, self.num_of_relays, self.num_of_sensors, self.radius,
-                    tuple(self.relays), tuple(self.sensors)))
+                     tuple(self.relays), tuple(self.sensors)))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
 
 if __name__ == "__main__":
-    inp = WusnInput.from_file('./small_data/dem1_0.in')
+    inp = WusnInput.from_file('./data/small_data/dem1_0.in')
     print(inp.relays[0])
-
