@@ -8,7 +8,6 @@ if __name__ == '__main__':
     f = open("small_data_result_ls.txt", "w+")
     file_list = os.listdir("small_data")
     for file_name in file_list:
-        print(file_name)
         # print(str(file_name))
         # f.write(file_name + "\n")
         inp = WusnInput.from_file("small_data/" + str(file_name))
@@ -21,5 +20,5 @@ if __name__ == '__main__':
         # f.write(str(res) + "\n")
         # f.write(str(end-start) + "s" + "\n")
         # print()
-        break
+        # break
     f.close()
