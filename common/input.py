@@ -22,7 +22,8 @@ class WusnConstants:
 
 class WusnInput:
     def __init__(self, _W=500, _H=500, _depth=1., _height=10., _num_of_relays=10, _num_of_sensors=50,
-                 _radius=20., _relays=None, _sensors=None, _BS=None):
+                 _radius=20., _relays=None, _sensors=None, _BS=None, static_relay_loss=None,
+                 dynamic_relay_loss=None, sensor_loss=None):
         self.W = _W
         self.H = _H
         self.depth = _depth
@@ -33,10 +34,12 @@ class WusnInput:
         self.num_of_sensors = _num_of_sensors
         self.radius = _radius
         self.BS = _BS
-        self.static_relay_loss = None
-        self.dynamic_relay_loss = None
-        self.sensor_loss = None
-        self.calculate_loss()
+        self.static_relay_loss = static_relay_loss
+        self.dynamic_relay_loss = dynamic_relay_loss
+        self.sensor_loss = sensor_loss
+
+        if None in (static_relay_loss, dynamic_relay_loss, sensor_loss):
+            self.calculate_loss()
 
     @classmethod
     def from_file(cls, path):
@@ -75,7 +78,8 @@ class WusnInput:
             'num_of_sensors': self.num_of_sensors,
             'relays': list(map(lambda x: x.to_dict(), self.relays)),
             'sensors': list(map(lambda x: x.to_dict(), self.sensors)),
-            'center': self.BS.to_dict()
+            'center': self.BS.to_dict(),
+            'radius': self.radius
         }
 
     def to_file(self, file_path):
