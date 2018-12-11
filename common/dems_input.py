@@ -18,7 +18,6 @@ class DemsInput:
 
     @classmethod
     def from_file(cls, path):
-        print("Reading data from %s" % path)
         f = open(path, "r")
         cols = int(f.readline().strip().split(' ')[1])
         rows = int(f.readline().strip().split(' ')[1])

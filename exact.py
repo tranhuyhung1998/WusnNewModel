@@ -1,27 +1,32 @@
 import pulp
-import glob
+import os
+import joblib
+import importlib
+import logging
+import logzero
 import numpy as np
 
+
+from logzero import logger
 from argparse import ArgumentParser
 from pulp import LpVariable
-from concurrent.futures import ProcessPoolExecutor
 
-import common.input as cinp
 import common.point as point
 
-from common.input import WusnInput
+from common.input import WusnInput, WusnConstants
+from common.output import WusnOutput
 
 
 def model_lp(inp: WusnInput, alpha=0.5):
     sensor_loss = inp.sensor_loss
     sensors, relays = list(inp.sensors), list(inp.relays)
     n, m = inp.num_of_sensors, inp.num_of_relays
-    E_Rx, E_Da = cinp.E_Rx, cinp.E_Da
-    e_mp = cinp.e_fs
+    E_Rx, E_Da = WusnConstants.e_rx, WusnConstants.e_da
+    SL = _get_sn_loss_matrix(sensor_loss, sensors, relays)
+    e_mp = WusnConstants.e_fs
     C = _get_conn_matrix(sensor_loss, sensors, relays)
-    Et = _get_sn_loss_matrix(sensor_loss, sensors, relays)
-    dB = _get_bs_distances(relays, inp.base_station)
-    Emax = _get_emax(Et, dB, cinp.k_bit, E_Rx, E_Da, e_mp)
+    dB = _get_bs_distances(relays, inp.BS)
+    Emax = inp.e_max
 
     prob = pulp.LpProblem('RelaySelection', pulp.LpMinimize)
 
@@ -39,22 +44,76 @@ def model_lp(inp: WusnInput, alpha=0.5):
 
     # Constraints
     for j in range(m):
-        asum = sum(A[:, j])
-        prob += (Er[j] == (cinp.k_bit * (asum * (E_Rx + E_Da) + e_mp * (dB[j] ** 4))))
+        asum = pulp.lpSum(A[:, j])
+        prob += (Er[j] == (WusnConstants.k_bit * (asum * (E_Rx + E_Da) + e_mp * (dB[j] ** 4))))
         prob += ((asum - Z[j] * n) <= 0)
         prob += (asum >= Z[j])
         prob += (Ex >= Er[j])
     for i in range(n):
-        prob += (sum(A[i]) == 1)
+        prob += (pulp.lpSum(A[i]) == 1)
     for i in range(n):
         for j in range(m):
             prob += (A[i, j] <= C[i, j])
-            prob += (Ex >= A[i, j])
+            prob += (Ex >= A[i, j] * SL[i, j])
 
-    Cx = alpha / m * sum(Z) + (1 - alpha) / Emax * Ex
+    Cx = alpha / m * pulp.lpSum(Z) + (1 - alpha) / Emax * Ex
     prob.setObjective(Cx)
 
     return prob
+
+
+def output_from_prob(prob: pulp.LpProblem, inp: WusnInput):
+    out = WusnOutput(inp)
+    vars_ = prob.variablesDict()
+    for i, sn in enumerate(inp.sensors):
+        for j, rn in enumerate(inp.relays):
+            assgn = vars_['a_%d_%d' % (i, j)].value()
+            if assgn > 0:
+                out.assign(rn, sn)
+                break
+    return out
+
+
+def solve(inp: WusnInput, save_path, alpha=0.5):
+    lz = importlib.reload(logzero)
+
+    def log(msg, level=logging.INFO):
+        lz.logger.log(level, '[%s] %s' % (save_path, msg))
+
+    inp.freeze()
+    try:
+        log('Modeling LP')
+        prob = model_lp(inp, alpha)
+        log('Solving LP')
+        prob.solve()
+
+        if prob.status == pulp.LpStatusOptimal:
+            log('Converting')
+            out = output_from_prob(prob, inp)
+            log('Saving')
+            out.to_file(save_path)
+            log(prob.variablesDict()['Ex'].value())
+            # log()
+            print('[%s] %.3f (%.3f)' % (save_path, prob.objective.value(), out.loss(alpha=alpha)))
+        else:
+            log('Unsolvable', level=logging.WARN)
+            print('[%s] UNSOLVED' % (save_path,))
+
+    except KeyboardInterrupt:
+        log('Canceled')
+        return
+    except Exception as e:
+        raise e
+
+
+def _get_sn_loss_matrix(sensor_loss, sensors, relays):
+    n, m = len(sensors), len(relays)
+    mat = np.zeros((n, m), dtype=np.float)
+    for i, sn in enumerate(sensors):
+        for j, rn in enumerate(relays):
+            if (sn, rn) in sensor_loss.keys():
+                mat[i, j] = sensor_loss[(sn, rn)]
+    return mat
 
 
 def _get_bs_distances(relays, base_station):
@@ -64,28 +123,9 @@ def _get_bs_distances(relays, base_station):
     return ds
 
 
-def _get_emax(sn_loss_mat, bs_distance, l, E_Rx, E_Da, e_fs):
-    n, m = sn_loss_mat.shape
-    vals = list(sn_loss_mat.flatten())
-    for d in bs_distance:
-        vals.append(l * (n * (E_Rx + E_Da) + e_fs * (d ** 4)))
-
-    return max(vals)
-
-
-def _get_sn_loss_matrix(sensor_loss, sensors, relays):
-    n, m = len(sensors), len(relays)
-    mat = np.zeros(n, m, dtype=np.float)
-    for i, sn in enumerate(sensors):
-        for j, rn in enumerate(relays):
-            if (sn, rn) in sensor_loss.keys():
-                mat[i, j] = sensor_loss[(sn, rn)]
-    return mat
-
-
 def _get_conn_matrix(sensor_loss, sensors, relays,):
     n, m = len(sensors), len(relays)
-    mat = np.zeros(n, m, dtype=np.int)
+    mat = np.zeros((n, m), dtype=np.int)
     for i, sn in enumerate(sensors):
         for j, rn in enumerate(relays):
             if (sn, rn) in sensor_loss.keys():
@@ -98,6 +138,27 @@ def parse_arguments():
 
     parser.add_argument(dest='input', nargs='+', help='Input files. Accept globs as input.')
     parser.add_argument('-p', '--procs', type=int, default=4, help='Number of processes to fork')
+    parser.add_argument('--alpha', type=float, default=0.5, help='Alpha coefficient')
+    parser.add_argument('-o', '--outdir', default='results/exact')
 
     return parser.parse_args()
 
+
+if __name__ == '__main__':
+    args_ = parse_arguments()
+    os.makedirs(args_.outdir, exist_ok=True)
+
+    logger.info('Loading input files')
+    save_paths = args_.input
+    save_paths = map(lambda x: os.path.split(x)[-1].split('.')[0], save_paths)
+    save_paths = map(lambda x: os.path.join(args_.outdir, x), save_paths)
+    save_paths = map(lambda x: x + '.out', save_paths)
+    save_paths = list(save_paths)
+
+    inputs = list(map(lambda x: WusnInput.from_file(x), args_.input))
+    logger.info('Solving %d problems' % len(inputs))
+
+    logger.info('Running using %d workers' % args_.procs)
+    joblib.Parallel(n_jobs=args_.procs)(
+        joblib.delayed(solve)(inp, sp, args_.alpha) for inp, sp in zip(inputs, save_paths)
+    )

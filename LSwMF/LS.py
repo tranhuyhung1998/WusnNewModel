@@ -85,7 +85,6 @@ def cal_value(inp: WusnInput, max_flow, sol):
 
     activated_relays = np.where(np.array(sol) > 0)[0]
     num_activated_relays = len(activated_relays)
-    print(num_activated_relays)
     for i in range(len(activated_relays)):
         relay_idx = activated_relays[i]
         # print(relay_idx)
@@ -142,7 +141,7 @@ def LS(inp: WusnInput):
         for i in range(len(sol)):
             for j in range(len(sol)):
                 if i != j:
-                    solc = copy(sol_k)
+                    solc = copy(best_sol)
                     solc[i], solc[j] = solc[i]+1, solc[j]-1
 
                     if ifValid(max_rn_conn, solc):
@@ -161,8 +160,8 @@ def LS(inp: WusnInput):
                                     value_k = value
                                     sol_k = solc
 
-        print(value_k, sum_k)
-        print(best_value, best_sum)
+        # print(value_k, sum_k)
+        # print(best_value, best_sum)
         if(value_k == best_value and sum_k == best_sum):
             break
         else:
