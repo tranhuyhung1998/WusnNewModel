@@ -112,7 +112,7 @@ class WusnInput:
         dynamic_relay_loss = {}
         R = self.radius
         BS = self.BS
-        print(BS.x)
+        # print(BS.x)
         for sn in self.sensors:
             for rn in self.relays:
                 if distance(sn, rn) <= 2*R:
