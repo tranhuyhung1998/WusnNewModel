@@ -61,7 +61,6 @@ class WusnOutput:
             if ls > l2:
                 l2 = ls
 
-        logger.debug(l2)
         l2 = l2 / self.inp.e_max * (1 - alpha)
         return l1 + l2
 
