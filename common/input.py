@@ -121,8 +121,10 @@ class WusnInput:
     def e_max(self):
         vals = []
         vals.extend(self.sensor_loss.values())
-        max_rloss = [WusnConstants.k_bit * (self.num_of_sensors * (WusnConstants.e_rx + WusnConstants.e_da) +
-                                            WusnConstants.e_fs * distance(rn, self.BS) ** 4) for rn in self.relays]
+        max_rloss = []
+        for rn in self.relays:
+            max_rloss.append(WusnConstants.k_bit * (self.num_of_sensors * (WusnConstants.e_rx + WusnConstants.e_da) +
+                                                    WusnConstants.e_fs * (distance(rn, self.BS) ** 4)))
         vals.extend(max_rloss)
         return max(vals)
 

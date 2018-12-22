@@ -45,7 +45,8 @@ def model_lp(inp: WusnInput, alpha=0.5):
     # Constraints
     for j in range(m):
         asum = pulp.lpSum(A[:, j])
-        prob += (Er[j] == (WusnConstants.k_bit * (asum * (E_Rx + E_Da) + e_mp * (dB[j] ** 4))))
+        prob += (Er[j] == (WusnConstants.k_bit * (asum * (E_Rx + E_Da)) +
+                           WusnConstants.k_bit * Z[j] * e_mp * (dB[j] ** 4)))
         prob += ((asum - Z[j] * n) <= 0)
         prob += (asum >= Z[j])
         prob += (Ex >= Er[j])
@@ -93,7 +94,6 @@ def solve(inp: WusnInput, save_path, alpha=0.5):
             log('Saving')
             out.to_file(save_path)
             log(prob.variablesDict()['Ex'].value())
-            # log()
             print('[%s] %.3f (%.3f)' % (save_path, prob.objective.value(), out.loss(alpha=alpha)))
         else:
             log('Unsolvable', level=logging.WARN)
