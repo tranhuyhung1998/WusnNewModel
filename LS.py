@@ -1,3 +1,4 @@
+import os, time
 from ortools.graph import pywrapgraph
 from common.input import WusnInput
 from copy import copy, deepcopy
@@ -31,9 +32,7 @@ def solve_max_flow(inp: WusnInput, sol, dist):
     sensors_arr = [k for k in inp.sensors]
     relays_arr = [k for k in inp.relays]
 
-    N = inp.num_of_sensors
-    M = inp.num_of_relays
-    R = inp.radius
+    N, M, R = inp.num_of_sensors, inp.num_of_relays, inp.radius
 
     for i in range(N):
         max_flow.AddArcWithCapacity(0, i+1, 1)
@@ -43,8 +42,6 @@ def solve_max_flow(inp: WusnInput, sol, dist):
             if distance(sensors_arr[i], relays_arr[j]) <= 2*dist:
                 max_flow.AddArcWithCapacity(i+1, j+N+1, 1)
 
-    # print(len(sol))
-    # print(M)
     for j in range(M):
         max_flow.AddArcWithCapacity(j+N+1, N+M+1, sol[j])
 
@@ -55,11 +52,9 @@ def solve_max_flow(inp: WusnInput, sol, dist):
 
 
 def BSR(inp: WusnInput, sol):
-    R = inp.radius
-    N = inp.num_of_sensors
-    min_r = R
-    left = 0
-    right = R
+    R, N = inp.radius, inp.num_of_sensors
+    min_r, left, right = R, 0, R
+
     mid = (left+right)/2
 
     if(solve_max_flow(inp, sol, R).OptimalFlow() < N):
@@ -105,9 +100,7 @@ def cal_value(inp: WusnInput, max_flow, sol):
 
 
 def isSolvable(inp: WusnInput):
-    N = inp.num_of_sensors
-    M = inp.num_of_relays
-    R = inp.radius
+    N, M, R = inp.num_of_sensors, inp.num_of_relays, inp.radius
 
     sensors_arr = [k for k in inp.sensors]
     relays_arr = [k for k in inp.relays]
@@ -173,5 +166,23 @@ def LS(inp: WusnInput):
         print('Best solution: {}\n'.format(best_sol))
     print('-------------------------')
 
-# if __name__ == '__main__':
-#     print('asd')
+if __name__ == '__main__':
+    if "small_data_result.txt" in os.listdir("."):
+        os.remove("small_data_result.txt")
+    f = open("small_data_result_ls.txt", "w+")
+    file_list = os.listdir("data/small_data")
+    for file_name in file_list:
+        # print(str(file_name))
+        # f.write(file_name + "\n")
+        inp = WusnInput.from_file("data/small_data/" + str(file_name))
+        LS(inp)
+        # print(inp.base_station)
+        # start = time.time()
+        # res = GA(inp)
+        # end = time.time()
+        # print(end-start)
+        # f.write(str(res) + "\n")
+        # f.write(str(end-start) + "s" + "\n")
+        # print()
+        # break
+    f.close()
