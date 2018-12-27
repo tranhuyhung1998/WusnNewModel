@@ -22,25 +22,33 @@ def max_flow(inp: WusnInput, max_num, rns):
     start_nodes = []
     end_nodes = []
     capacities = []
-    source = inp.num_of_relays + inp.num_of_sensors + 1
-    sink = inp.num_of_relays + inp.num_of_sensors + 2
+    cost = []
+    supply = inp.num_of_relays + inp.num_of_sensors + len(rns) + 10000
+    demand = inp.num_of_relays + inp.num_of_sensors + len(rns) + 20000
     
-    for i in rns:
-        start_nodes.append(source)
+    for i in range(inp.num_of_sensors):
+        start_nodes.append(supply)
         end_nodes.append(i)
+        capacities.append(1)
+        cost.append(0)
+    
+    for i in range(inp.num_of_sensors):
+        for j in rns:
+            if distance(inp.relays[j], inp.sensors[i]) <= 2*inp.radius:
+                start_nodes.append(i)
+                end_nodes.append(j+inp.num_of_sensors) 
+                capacities.append(1)
+                # cost.append()
+
+    for i in rns:
+        start_nodes.append(i+inp.num_of_sensors)
+        end_nodes.append(i+inp.num_of_sensors+len(rns))
         capacities.append(max_num[inp.relays[i]])
 
-    for i in rns:
-        for j in range(inp.num_of_sensors):
-            if distance(inp.relays[i], inp.sensors[j]) <= 2*inp.radius:
-                start_nodes.append(i)
-                end_nodes.append(j+inp.num_of_relays) 
-                capacities.append(1)
-
-    for i in range(inp.num_of_sensors):
-        start_nodes.append(i+inp.num_of_relays)   
-        end_nodes.append(sink)
-        capacities.append(1)
+        start_nodes.append(i+inp.num_of_sensors+len(rns))
+        end_nodes.append(demand)
+        capacities.append(max_num[inp.relays[i]])
+        # cost.append(inp.static_relay_loss(inp.relays[i]))
     
     for i in range(len(start_nodes)):
         print(start_nodes[i], end_nodes[i], capacities[i])
@@ -50,7 +58,7 @@ def max_flow(inp: WusnInput, max_num, rns):
     for i in range(0, len(start_nodes)):
         mf.AddArcWithCapacity(start_nodes[i], end_nodes[i], capacities[i])
 
-    if mf.Solve(source, sink) == mf.OPTIMAL:
+    if mf.Solve(supply, demand) == mf.OPTIMAL:
         print('Max flow:', mf.OptimalFlow())
         print('')
         print('  Arc    Flow / Capacity')
