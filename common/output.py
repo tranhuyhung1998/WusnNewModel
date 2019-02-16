@@ -73,7 +73,7 @@ class WusnOutput:
         for rn in ur:
             conns = list(filter(lambda x: x == rn, self.mapping.values()))
             ls = WusnConstants.k_bit * (len(conns) * (WusnConstants.e_rx + WusnConstants.e_da) +
-                                        WusnConstants.e_fs * (distance(rn, self.inp.BS) ** 4))
+                                        WusnConstants.e_mp * (distance(rn, self.inp.BS) ** 4))
             total+=ls
             
         return total

@@ -78,26 +78,27 @@ def cal_value(inp: WusnInput, max_flow, sol, alpha):
     sensors_arr = [k for k in inp.sensors]
     relays_arr = [k for k in inp.relays]
 
-    # value = -1
-    # sum = 0
+    value = -float('inf')
+    sum = 0
 
-    # activated_relays = np.where(np.array(sol) > 0)[0]
-    # num_activated_relays = len(activated_relays)
-    # for i in range(len(activated_relays)):
-    #     relay_idx = activated_relays[i]
-    #     value = max([value, inp.static_relay_loss[relays_arr[relay_idx]] +
-    #                  sol[relay_idx]*inp.dynamic_relay_loss[relays_arr[relay_idx]]])
-    #     sum += inp.static_relay_loss[relays_arr[relay_idx]] + \
-    #         sol[relay_idx]*inp.dynamic_relay_loss[relays_arr[relay_idx]]
+    activated_relays = np.where(np.array(sol) > 0)[0]
+    num_activated_relays = len(activated_relays)
+    # print('')
+    # print('--------')
+    for i in range(len(activated_relays)):
+        relay_idx = activated_relays[i]
+        value = max([value, inp.static_relay_loss[relays_arr[relay_idx]] +
+                     sol[relay_idx]*inp.dynamic_relay_loss[relays_arr[relay_idx]]])
+        sum += inp.static_relay_loss[relays_arr[relay_idx]] + \
+            sol[relay_idx]*inp.dynamic_relay_loss[relays_arr[relay_idx]]
 
-    # for i in range(max_flow.NumArcs()):
-    #     if max_flow.Tail(i) <= inp.num_of_sensors and max_flow.Tail(i) > 0 and max_flow.Flow(i) > 0:
-    #         tail, head = max_flow.Tail(
-    #             i)-1, max_flow.Head(i)-1-inp.num_of_sensors
-    #         value = max(value, inp.sensor_loss[(
-    #             sensors_arr[tail], relays_arr[head])])
-    #         sum += inp.sensor_loss[(sensors_arr[tail], relays_arr[head])]
-    # return value, sum
+    for i in range(max_flow.NumArcs()):
+        if max_flow.Tail(i) <= inp.num_of_sensors and max_flow.Tail(i) > 0 and max_flow.Flow(i) > 0:
+            tail, head = max_flow.Tail(
+                i)-1, max_flow.Head(i)-1-inp.num_of_sensors
+            value = max(value, inp.sensor_loss[(
+                sensors_arr[tail], relays_arr[head])])
+            sum += inp.sensor_loss[(sensors_arr[tail], relays_arr[head])]
 
     out = WusnOutput(inp)
     for i in range(max_flow.NumArcs()):
@@ -105,7 +106,8 @@ def cal_value(inp: WusnInput, max_flow, sol, alpha):
             tail, head = max_flow.Tail(
                 i)-1, max_flow.Head(i)-1-inp.num_of_sensors
             out.assign(relays_arr[head], sensors_arr[tail])
-    return out.loss(), out.total_tranmission_loss()
+    return num_activated_relays * alpha / inp.num_of_relays + value * (1 - alpha) / inp.e_max, sum
+    # return out.loss(), out.total_tranmission_loss()
 
 
 def isSolvable(inp: WusnInput):
@@ -150,7 +152,8 @@ def LS(inp: WusnInput, alpha):
                         max_flow = BSR(inp, solc)
                         if max_flow == -1:
                             continue
-                        value, sum = cal_value(inp, max_flow, solc, alpha)
+                        value, sum = cal_value(
+                            inp, max_flow, solc, alpha)
                         if value < value_k:
                             sum_k = sum
                             value_k = value
@@ -170,8 +173,10 @@ def LS(inp: WusnInput, alpha):
             best_sol = sol_k
             best_value = value_k
             best_sum = sum_k
+
         print('Iteration: ', k+1)
-        print('Best value: {}. Best sum: {}'.format(best_value, best_sum))
+        print('Best value: {}. Best sum: {}'.format(
+            best_value, best_sum))
         print('Best solution: {}\n'.format(best_sol))
     print('-------------------------')
 
@@ -179,7 +184,8 @@ def LS(inp: WusnInput, alpha):
 def parse_arguments():
     parser = ArgumentParser()
 
-    parser.add_argument('--alpha', type=float, default=0.5, help='Alpha coefficient')
+    parser.add_argument('--alpha', type=float, default=0.5,
+                        help='Alpha coefficient')
 
     return parser.parse_args()
 
@@ -187,12 +193,14 @@ def parse_arguments():
 if __name__ == '__main__':
     if "small_data_result.txt" in os.listdir("."):
         os.remove("small_data_result.txt")
-    
+
     args_ = parse_arguments()
 
     f = open("small_data_result_ls.txt", "w+")
     file_list = os.listdir("data/small_data")
     for file_name in file_list:
+        if file_name == 'BOUND':
+            continue
         # print(str(file_name))
         # f.write(file_name + "\n")
         inp = WusnInput.from_file("data/small_data/" + str(file_name))
