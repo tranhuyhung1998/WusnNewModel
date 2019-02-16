@@ -17,7 +17,8 @@ from common.input import WusnInput, WusnConstants
 from common.output import WusnOutput
 
 
-def model_lp(inp: WusnInput, alpha=0.5):
+def model_lp(inp: WusnInput, alpha=0.5, lax=False):
+    var_cls = pulp.LpBinary if not lax else 'Continous'
     sensor_loss = inp.sensor_loss
     sensors, relays = list(inp.sensors), list(inp.relays)
     n, m = inp.num_of_sensors, inp.num_of_relays
@@ -31,11 +32,11 @@ def model_lp(inp: WusnInput, alpha=0.5):
     prob = pulp.LpProblem('RelaySelection', pulp.LpMinimize)
 
     # Variables
-    Z = [LpVariable('z_%d' % j, lowBound=0, upBound=1, cat=pulp.LpBinary) for j in range(m)]
+    Z = [LpVariable('z_%d' % j, lowBound=0, upBound=1, cat=var_cls) for j in range(m)]
     Z = np.asarray(Z, dtype=object)
     A = []
     for i in range(n):
-        row = [LpVariable('a_%d_%d' % (i, j), lowBound=0, upBound=1, cat=pulp.LpBinary) for j in range(m)]
+        row = [LpVariable('a_%d_%d' % (i, j), lowBound=0, upBound=1, cat=var_cls) for j in range(m)]
         A.append(row)
     A = np.asarray(A, dtype=object)
     Ex = LpVariable('Ex', lowBound=0)
@@ -75,7 +76,7 @@ def output_from_prob(prob: pulp.LpProblem, inp: WusnInput):
     return out
 
 
-def solve(inp: WusnInput, save_path, alpha=0.5):
+def solve(inp: WusnInput, save_path, alpha=0.5, lax=False):
     lz = importlib.reload(logzero)
 
     def log(msg, level=logging.INFO):
@@ -84,7 +85,7 @@ def solve(inp: WusnInput, save_path, alpha=0.5):
     inp.freeze()
     try:
         log('Modeling LP')
-        prob = model_lp(inp, alpha)
+        prob = model_lp(inp, alpha, lax)
         log('Solving LP')
         prob.solve()
 
@@ -139,6 +140,7 @@ def parse_arguments():
     parser.add_argument(dest='input', nargs='+', help='Input files. Accept globs as input.')
     parser.add_argument('-p', '--procs', type=int, default=4, help='Number of processes to fork')
     parser.add_argument('--alpha', type=float, default=0.5, help='Alpha coefficient')
+    parser.add_argument('--lax', action='store_true')
     parser.add_argument('-o', '--outdir', default='results/exact')
 
     return parser.parse_args()
@@ -157,8 +159,10 @@ if __name__ == '__main__':
 
     inputs = list(map(lambda x: WusnInput.from_file(x), args_.input))
     logger.info('Solving %d problems' % len(inputs))
+    if args_.lax:
+        logger.info('Approximating...')
 
     logger.info('Running using %d workers' % args_.procs)
     joblib.Parallel(n_jobs=args_.procs)(
-        joblib.delayed(solve)(inp, sp, args_.alpha) for inp, sp in zip(inputs, save_paths)
+        joblib.delayed(solve)(inp, sp, args_.alpha, args_.lax) for inp, sp in zip(inputs, save_paths)
     )
