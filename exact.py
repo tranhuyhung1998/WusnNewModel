@@ -24,7 +24,7 @@ def model_lp(inp: WusnInput, alpha=0.5, lax=False):
     n, m = inp.num_of_sensors, inp.num_of_relays
     E_Rx, E_Da = WusnConstants.e_rx, WusnConstants.e_da
     SL = _get_sn_loss_matrix(sensor_loss, sensors, relays)
-    e_mp = WusnConstants.e_fs
+    e_mp = WusnConstants.e_mp
     C = _get_conn_matrix(sensor_loss, sensors, relays)
     dB = _get_bs_distances(relays, inp.BS)
     Emax = inp.e_max
