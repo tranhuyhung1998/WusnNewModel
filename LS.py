@@ -138,15 +138,72 @@ def LS(inp: WusnInput, alpha):
     print('Iteration: ', 0)
     print('Best value: {}. Best sum: {}'.format(best_value, best_sum))
     print('Best solution: {}\n'.format(best_sol))
+    
     for k in range(max_iteration):
+        break
         sol_k = best_sol
         value_k = best_value
         sum_k = best_sum
+        cnt = 0
+        #move 1 connection
         for i in range(len(sol)):
             for j in range(len(sol)):
                 if i != j:
+                    cnt += 1
                     solc = copy(best_sol)
                     solc[i], solc[j] = solc[i]+1, solc[j]-1
+
+                    if ifValid(max_rn_conn, solc):
+                        max_flow = BSR(inp, solc)
+                        if max_flow == -1:
+                            continue
+                        value, sum = cal_value(
+                            inp, max_flow, solc, alpha)
+                        if value < value_k:
+                            sum_k = sum
+                            value_k = value
+                            sol_k = solc
+                        else:
+                            if value == value_k:
+                                if sum < sum_k:
+                                    sum_k = sum
+                                    value_k = value
+                                    sol_k = solc
+        
+        #swap connections
+        for i in range(len(sol)):
+            for j in range(len(sol)):
+                if i < j:
+                    cnt += 1
+                    solc = copy(best_sol)
+                    solc[i], solc[j] = solc[j], solc[i]
+
+                    if ifValid(max_rn_conn, solc):
+                        max_flow = BSR(inp, solc)
+                        if max_flow == -1:
+                            continue
+                        value, sum = cal_value(
+                            inp, max_flow, solc, alpha)
+                        if value < value_k:
+                            sum_k = sum
+                            value_k = value
+                            sol_k = solc
+                        else:
+                            if value == value_k:
+                                if sum < sum_k:
+                                    sum_k = sum
+                                    value_k = value
+                                    sol_k = solc
+        
+        #share connections
+        for i in range(len(sol)):
+            for j in range(len(sol)):
+                if i != j:
+                    cnt += 1
+                    solc = copy(best_sol)
+                    total_conn = solc[i] + solc[j]
+                    solc[i] = math.ceil(total_conn * max_rn_conn[i]/(max_rn_conn[i] + max_rn_conn[j]))
+                    solc[j] = total_conn - solc[i]
 
                     if ifValid(max_rn_conn, solc):
                         max_flow = BSR(inp, solc)
@@ -173,12 +230,13 @@ def LS(inp: WusnInput, alpha):
             best_sol = sol_k
             best_value = value_k
             best_sum = sum_k
-
+        print(cnt)
         print('Iteration: ', k+1)
         print('Best value: {}. Best sum: {}'.format(
             best_value, best_sum))
         print('Best solution: {}\n'.format(best_sol))
     print('-------------------------')
+    return best_value
 
 
 def parse_arguments():
@@ -186,32 +244,22 @@ def parse_arguments():
 
     parser.add_argument('--alpha', type=float, default=0.5,
                         help='Alpha coefficient')
-
+    # parser.add_argument('--outdir', type=str, default='data/small_data/LS')
+    parser.add_argument('--indir', type=str,default='small_data')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     if "small_data_result.txt" in os.listdir("."):
         os.remove("small_data_result.txt")
-
     args_ = parse_arguments()
-
-    f = open("small_data_result_ls.txt", "w+")
-    file_list = os.listdir("data/small_data")
+    f = open(os.path.join('data', args_.indir, 'LS'), 'w+')
+    file_list = os.listdir(os.path.join('data',args_.indir))
     for file_name in file_list:
-        if file_name == 'BOUND':
+        if file_name == 'BOUND' or file_name == 'LS':
             continue
-        # print(str(file_name))
-        # f.write(file_name + "\n")
-        inp = WusnInput.from_file("data/small_data/" + str(file_name))
-        LS(inp, args_.alpha)
-        # print(inp.base_station)
-        # start = time.time()
-        # res = GA(inp)
-        # end = time.time()
-        # print(end-start)
-        # f.write(str(res) + "\n")
-        # f.write(str(end-start) + "s" + "\n")
-        # print()
-        # break
+
+        inp = WusnInput.from_file(os.path.join("data",args_.indir,str(file_name)))
+        f.write('{0} {1:.3f}\n'.format(file_name, LS(inp, args_.alpha)))
+    
     f.close()
