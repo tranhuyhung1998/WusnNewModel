@@ -1,36 +1,36 @@
-[results/approx/medium/uu-dem10_r30_1.out] 0.005 (0.642)
-[results/approx/medium/uu-dem1_r30_1.out] 0.005 (0.772)
-[results/approx/medium/uu-dem3_r30_1.out] 0.005 (0.774)
-[results/approx/medium/uu-dem4_r30_1.out] 0.005 (0.773)
-[results/approx/medium/uu-dem5_r30_1.out] 0.005 (0.785)
-[results/approx/medium/uu-dem6_r30_1.out] 0.005 (0.759)
-[results/approx/medium/uu-dem6_r50_1.out] 0.005 (0.749)
-[results/approx/medium/uu-dem8_r25_1.out] 0.005 (0.776)
-[results/approx/medium/uu-dem8_r50_1.out] 0.005 (0.758)
-[results/approx/medium/uu-dem10_r50_1.out] 0.005 (nan)
-[results/approx/medium/uu-dem1_r50_1.out] 0.005 (0.775)
-[results/approx/medium/uu-dem3_r50_1.out] 0.005 (0.724)
-[results/approx/medium/uu-dem4_r50_1.out] 0.005 (0.744)
-[results/approx/medium/uu-dem6_r25_1.out] 0.005 (0.800)
-[results/approx/medium/uu-dem6_r45_1.out] 0.005 (0.637)
-[results/approx/medium/uu-dem7_r45_1.out] 0.005 (0.703)
-[results/approx/medium/uu-dem8_r45_1.out] 0.005 (0.743)
-[results/approx/medium/uu-dem10_r25_1.out] 0.005 (0.720)
-[results/approx/medium/uu-dem1_r25_1.out] 0.005 (0.728)
-[results/approx/medium/uu-dem3_r25_1.out] 0.005 (0.767)
-[results/approx/medium/uu-dem4_r25_1.out] 0.005 (0.734)
-[results/approx/medium/uu-dem5_r25_1.out] 0.005 (0.736)
-[results/approx/medium/uu-dem5_r50_1.out] 0.005 (0.486)
-[results/approx/medium/uu-dem7_r30_1.out] 0.005 (0.787)
-[results/approx/medium/uu-dem8_r30_1.out] 0.005 (0.749)
-[results/approx/medium/uu-dem9_r25_1.out] 0.005 (0.781)
-[results/approx/medium/uu-dem9_r45_1.out] 0.005 (0.747)
-[results/approx/medium/uu-dem10_r45_1.out] 0.005 (0.745)
-[results/approx/medium/uu-dem1_r45_1.out] 0.005 (0.734)
-[results/approx/medium/uu-dem3_r45_1.out] 0.005 (0.795)
-[results/approx/medium/uu-dem4_r45_1.out] 0.005 (0.652)
-[results/approx/medium/uu-dem5_r45_1.out] 0.005 (0.782)
-[results/approx/medium/uu-dem7_r25_1.out] 0.005 (0.646)
-[results/approx/medium/uu-dem7_r50_1.out] 0.005 (0.739)
-[results/approx/medium/uu-dem9_r30_1.out] 0.005 (0.786)
-[results/approx/medium/uu-dem9_r50_1.out] 0.005 (0.543)
+[results/approx/medium/uu-dem10_r50_1.out] 5.00029246e-03
+[results/approx/medium/uu-dem1_r45_1.out] 5.00147470e-03
+[results/approx/medium/uu-dem3_r45_1.out] 5.00055783e-03
+[results/approx/medium/uu-dem4_r45_1.out] 5.00052844e-03
+[results/approx/medium/uu-dem5_r30_1.out] 5.00232580e-03
+[results/approx/medium/uu-dem6_r30_1.out] 5.00296334e-03
+[results/approx/medium/uu-dem7_r30_1.out] 5.00138466e-03
+[results/approx/medium/uu-dem8_r25_1.out] 5.00112475e-03
+[results/approx/medium/uu-dem9_r25_1.out] 5.00095771e-03
+[results/approx/medium/uu-dem10_r30_1.out] 5.00067325e-03
+[results/approx/medium/uu-dem1_r25_1.out] 5.00187400e-03
+[results/approx/medium/uu-dem3_r25_1.out] 5.00129303e-03
+[results/approx/medium/uu-dem4_r25_1.out] 5.00122104e-03
+[results/approx/medium/uu-dem5_r25_1.out] 5.00089278e-03
+[results/approx/medium/uu-dem6_r25_1.out] 5.00123652e-03
+[results/approx/medium/uu-dem7_r25_1.out] 5.00059887e-03
+[results/approx/medium/uu-dem8_r30_1.out] 5.00095867e-03
+[results/approx/medium/uu-dem9_r30_1.out] 5.00161527e-03
+[results/approx/medium/uu-dem10_r45_1.out] 5.00061142e-03
+[results/approx/medium/uu-dem1_r30_1.out] 5.00093982e-03
+[results/approx/medium/uu-dem3_r30_1.out] 5.00117263e-03
+[results/approx/medium/uu-dem4_r30_1.out] 5.00272666e-03
+[results/approx/medium/uu-dem5_r45_1.out] 5.00144735e-03
+[results/approx/medium/uu-dem6_r45_1.out] 5.00083426e-03
+[results/approx/medium/uu-dem7_r45_1.out] 5.00015072e-03
+[results/approx/medium/uu-dem8_r45_1.out] 5.00035773e-03
+[results/approx/medium/uu-dem9_r45_1.out] 5.00155075e-03
+[results/approx/medium/uu-dem10_r25_1.out] 5.00227466e-03
+[results/approx/medium/uu-dem1_r50_1.out] 5.00030955e-03
+[results/approx/medium/uu-dem3_r50_1.out] 5.00047832e-03
+[results/approx/medium/uu-dem4_r50_1.out] 5.00049817e-03
+[results/approx/medium/uu-dem5_r50_1.out] 5.00034945e-03
+[results/approx/medium/uu-dem6_r50_1.out] 5.00064465e-03
+[results/approx/medium/uu-dem7_r50_1.out] 5.00021682e-03
+[results/approx/medium/uu-dem8_r50_1.out] 5.00080857e-03
+[results/approx/medium/uu-dem9_r50_1.out] 5.00049581e-03

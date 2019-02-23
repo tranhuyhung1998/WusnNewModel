@@ -22,7 +22,7 @@ def parse_arguments():
     parser.add_argument('-H', type=int, default=200)
     parser.add_argument('--rows', type=int, default=41)
     parser.add_argument('--cols', type=int, default=41)
-    parser.add_argument('--cdepth', type=int, default=5)
+    parser.add_argument('--csize', type=int, default=25)
     parser.add_argument('-n', '--count', type=int, default=1)
     parser.add_argument('--depth', type=float, default=1)
     parser.add_argument('--height', type=float, default=10)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     radi = list(map(lambda x: int(x), args.radius.split(',')))
     for inp_ in args.dems:
         dem = DemsInput.from_file(inp_)
-        dem.scale(args.cols, args.rows, args.cdepth)
+        dem.scale(args.cols, args.rows, args.csize)
         dname = os.path.split(inp_)[-1].split('.')[0]
         for r in radi:
             for i in range(args.count):
@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 # Generate random relays
                 relays = []
                 for j in range(args.nr):
-                    rn = uniform_point(dem, (0, dem.cols), (0, dem.rows),
+                    rn = uniform_point(dem, (0, args.W), (0, args.H),
                                        z_off=args.height, cls=RelayNode)
                     relays.append(rn)
                     center_x += rn.x
@@ -87,7 +87,7 @@ if __name__ == '__main__':
                 for j in range(args.ns):
                     ok, sn = False, None
                     while not ok:
-                        sn = uniform_point(dem, (0, dem.cols), (0, dem.rows),
+                        sn = uniform_point(dem, (0, args.W), (0, args.H),
                                            z_off=-args.depth, cls=SensorNode)
                         ok = is_covered(sn, relays, r)
                     sensors.append(sn)
