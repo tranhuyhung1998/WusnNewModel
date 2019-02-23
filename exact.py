@@ -94,8 +94,7 @@ def solve(inp: WusnInput, save_path, alpha=0.5, lax=False):
             out = output_from_prob(prob, inp)
             log('Saving')
             out.to_file(save_path)
-            log(prob.variablesDict()['Ex'].value())
-            print('[%s] %.3f (%.3f)' % (save_path, prob.objective.value(), out.loss(alpha=alpha)))
+            print('[%s] %.8e' % (save_path, prob.objective.value()))
         else:
             log('Unsolvable', level=logging.WARN)
             print('[%s] UNSOLVED' % (save_path,))
