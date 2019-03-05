@@ -118,6 +118,32 @@ def cal_value(inp: WusnInput, max_flow, sol, alpha):
 
     return num_activated_relays * alpha / inp.num_of_relays + value * (1 - alpha) / inp.e_max, sum
 
+def cal_energy(inp: WusnInput, max_flow, sol, alpha):
+    sensors_arr = [k for k in inp.sensors]
+    relays_arr = [k for k in inp.relays]
+
+    value = -float('inf')
+    sum = 0
+
+    activated_relays = np.where(np.array(sol) > 0)[0]
+    num_activated_relays = len(activated_relays)
+
+    for i in range(len(activated_relays)):
+        relay_idx = activated_relays[i]
+        value = max([value, inp.static_relay_loss[relays_arr[relay_idx]] +
+                     sol[relay_idx]*inp.dynamic_relay_loss[relays_arr[relay_idx]]])
+        sum += inp.static_relay_loss[relays_arr[relay_idx]] + \
+            sol[relay_idx]*inp.dynamic_relay_loss[relays_arr[relay_idx]]
+
+    for i in range(max_flow.NumArcs()):
+        if max_flow.Tail(i) <= inp.num_of_sensors and max_flow.Tail(i) > 0 and max_flow.Flow(i) > 0:
+            tail, head = max_flow.Tail(
+                i)-1, max_flow.Head(i)-1-inp.num_of_sensors
+            value = max(value, inp.sensor_loss[(
+                sensors_arr[tail], relays_arr[head])])
+            sum += inp.sensor_loss[(sensors_arr[tail], relays_arr[head])]
+
+    return value
 
 def isSolvable(inp: WusnInput):
     N, M, R = inp.num_of_sensors, inp.num_of_relays, inp.radius
@@ -145,12 +171,43 @@ def LS(inp: WusnInput, alpha):
     best_value, best_sum = cal_value(inp, max_flow, sol, alpha)
     best_sol = sol
     print('Iteration: ', 0)
+    print('Relays used: ', len(np.where(np.array(best_sol) > 0)[0]))
     print('Best value: {}. Best sum: {}'.format(best_value, best_sum))
     print('Best solution: {}\n'.format(best_sol))
     for k in range(max_iteration):
         sol_k = best_sol
         value_k = best_value
         sum_k = best_sum
+        
+        #
+        for i in range(len(sol)):
+            for j in range(len(sol)):
+                if i != j:
+                    solc = copy(best_sol)
+
+                    if max_rn_conn[i] <= solc[i] + solc[j]:
+                        solc[i] = solc[i] + solc[j]
+                        solc[j] = 0
+                    else:
+                        continue
+
+                    if ifValid(inp, max_rn_conn, solc, value_k, alpha):
+                        max_flow = BSR(inp, solc)
+                        if max_flow == -1:
+                            continue
+                        value, sum = cal_value(
+                            inp, max_flow, solc, alpha)
+                        if value < value_k:
+                            sum_k = sum
+                            value_k = value
+                            sol_k = solc
+                        else:
+                            if value == value_k:
+                                if sum < sum_k:
+                                    sum_k = sum
+                                    value_k = value
+                                    sol_k = solc
+
         #move 1 connection
         for i in range(len(sol)):
             for j in range(len(sol)):
@@ -158,7 +215,7 @@ def LS(inp: WusnInput, alpha):
                     solc = copy(best_sol)
                     solc[i], solc[j] = solc[i]+1, solc[j]-1
 
-                    if ifValid(inp, max_rn_conn, solc, best_value, alpha):
+                    if ifValid(inp, max_rn_conn, solc, value_k, alpha):
                         max_flow = BSR(inp, solc)
                         if max_flow == -1:
                             continue
@@ -184,7 +241,7 @@ def LS(inp: WusnInput, alpha):
                         continue
                     solc[i], solc[j] = solc[j], solc[i]
 
-                    if ifValid(inp, max_rn_conn, solc, best_value, alpha):
+                    if ifValid(inp, max_rn_conn, solc, value_k, alpha):
                         max_flow = BSR(inp, solc)
                         if max_flow == -1:
                             continue
@@ -217,7 +274,7 @@ def LS(inp: WusnInput, alpha):
                     if solc[i] == oldi:
                         continue
 
-                    if ifValid(inp, max_rn_conn, solc, best_value, alpha):
+                    if ifValid(inp, max_rn_conn, solc, value_k, alpha):
                         max_flow = BSR(inp, solc)
                         if max_flow == -1:
                             continue
@@ -242,11 +299,12 @@ def LS(inp: WusnInput, alpha):
             best_sum = sum_k
 
         print('Iteration: ', k+1)
+        print('Relays used: ', len(np.where(np.array(best_sol) > 0)[0]))
         print('Best value: {}. Best sum: {}'.format(
             best_value, best_sum))
         print('Best solution: {}\n'.format(best_sol))
     print('-------------------------')
-    return best_value
+    return best_value, len(np.where(np.array(best_sol) > 0)[0]), cal_energy(inp, BSR(inp, best_sol), best_sol, alpha)
 
 
 def parse_arguments():
@@ -271,6 +329,7 @@ if __name__ == '__main__':
             continue
         print(file_name)
         inp = WusnInput.from_file(os.path.join("data",args_.indir,str(file_name)))
-        f.write('{0} {1:.3f}\n'.format(file_name, inp.e_max))#LS(inp, args_.alpha)))
+        best_value, relays_used, energy = LS(inp, args_.alpha)
+        f.write('{} {} {} {} {}\n'.format(file_name, best_value, relays_used, energy, inp.e_max))
     
     f.close()
