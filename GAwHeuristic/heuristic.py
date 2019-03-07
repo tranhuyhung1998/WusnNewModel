@@ -3,6 +3,7 @@ lib_path = os.path.abspath(os.path.join('..'))
 sys.path.append(lib_path)
 
 from common.input import *
+from common.output import *
 
 # Unit: J
 E_Tx = 50*1e-9
@@ -36,22 +37,28 @@ def generate_connect_matrix(inp: WusnInput, individual):
             return False
     return connect
 
-def heuristic(inp: WusnInput, individual):
+def heuristic(inp: WusnInput, individual) -> WusnOutput:
     connect = generate_connect_matrix(inp, individual)
+
     if connect == False:
-        return None, 9999, 9999
+        return WusnOutput(inp, {})
+
     relay_list = get_relay_list(individual)
     num_sensors_to_relay = [0] * len(individual)
     static_relay_loss = inp.static_relay_loss
     dynamic_relay_loss = inp.dynamic_relay_loss
     sensor_loss = inp.sensor_loss
-    selected_relay_list = []
+    # selected_relay_list = []
 
     num_sensors = inp.num_of_sensors
-    config = [0]*num_sensors
-    value = -float("inf")
 
-    config = [0]*inp.num_of_sensors
+    config = {}
+
+# Xet tung sensor 
+# Voi moi sensor, tim ra gia tri nho nhat giua 2 gia tri: tieu hao cua sensor va tieu hao cua relay (local_max)
+# Tim ra gia tri local_max nho nhat (min_max)
+# Sensor ket noi RN sao nho min_max giam (hoac khong tang len)
+
     for i in range(inp.num_of_sensors):
         min_max = float("inf")
         selected_id = 0
@@ -63,10 +70,10 @@ def heuristic(inp: WusnInput, individual):
                 if local_max < min_max:
                     min_max = local_max
                     selected_id = rn_id
-        config[i] = selected_id
+        config[inp.sensors[i]] = inp.relays[selected_id]
         num_sensors_to_relay[selected_id] += 1
-        if selected_id not in selected_relay_list:
-            selected_relay_list.append(selected_id)
-        if min_max > value:
-            value = min_max
-    return config, value, len(selected_relay_list)
+        # if selected_id not in selected_relay_list:
+        #     selected_relay_list.append(selected_id)
+
+    # return config, value, len(selected_relay_list)
+    return WusnOutput(inp, config)
