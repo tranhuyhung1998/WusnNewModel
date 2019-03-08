@@ -16,9 +16,11 @@ if __name__ == "__main__":
 
     f = open("small_data_result.txt", "w")
     file_list = os.listdir("data/small_data")
+    
     for file_name in file_list:
+        if file_name == "BOUND":
+            continue
         print(str(file_name))
-        f.write(file_name + "\n")
         inp = WusnInput.from_file("data/small_data/" + str(file_name))
         start = time.time()
         res = GA(inp)[1]

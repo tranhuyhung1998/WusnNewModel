@@ -14,6 +14,7 @@ CP = 0.8
 MP = 0.1
 NUM_OF_INDIVIDUALS = 150
 TERMINATE = 50
+alpha = 0.1
 
 def random_init_individual(num_relay):
     "Initial individual with any num of relay"
@@ -66,10 +67,10 @@ def mutate(original):
     return fake
 
 def normalize_loss(x):
-    if x[1].loss() < 0:
+    if x[1].loss(alpha) < 0:
         return float("inf")
     else:
-        return x[1].loss()
+        return x[1].loss(alpha)
 
 def GA(inp: WusnInput) -> int:
     # Khoi tao quan the
@@ -88,8 +89,8 @@ def GA(inp: WusnInput) -> int:
     print(individuals[0])
     
     count_stable = 0
-    max_c = individuals[0][1].loss()
-    prev_max = individuals[0][1].loss()
+    max_c = individuals[0][1].loss(alpha)
+    prev_max = individuals[0][1].loss(alpha)
 
     # Iterate through generations
     for it in range(0, GEN):
@@ -153,19 +154,19 @@ def GA(inp: WusnInput) -> int:
 
         individuals2 = sorted(individuals, key=normalize_loss)
         individuals = individuals2[:NUM_OF_INDIVIDUALS]
-        if individuals[0][1].loss() < max_c:
-            max_c = individuals[0][1].loss()
-        if individuals[0][1].loss() == prev_max:
+        if individuals[0][1].loss(alpha) < max_c:
+            max_c = individuals[0][1].loss(alpha)
+        if individuals[0][1].loss(alpha) == prev_max:
             count_stable += 1
         else:
             count_stable = 0
         if count_stable == TERMINATE:
             print("TERMINATE")
             break
-        prev_max = individuals[0][1].loss()
+        prev_max = individuals[0][1].loss(alpha)
         end = time.time()
         print("none: %d, not_none: %d" % (none, not_none))
-        print("Gen: %d, time: %fs, min: %f %f" % (it, end - start, individuals[0][1].loss(), individuals[NUM_OF_INDIVIDUALS-1][1].loss()))
+        print("Gen: %d, time: %fs, min: %f %f" % (it, end - start, individuals[0][1].loss(alpha), individuals[NUM_OF_INDIVIDUALS-1][1].loss(alpha)))
     # print(max_c)
     return individuals[0]
 
