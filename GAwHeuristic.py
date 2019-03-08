@@ -21,10 +21,11 @@ if __name__ == "__main__":
         f.write(file_name + "\n")
         inp = WusnInput.from_file("data/small_data/" + str(file_name))
         start = time.time()
-        res = GA(inp)
+        res = GA(inp)[1]
         end = time.time()
         print(end-start)
-        f.write(str(res) + "\n")
+        f.write(str(file_name) + "|")
+        f.write(str(res.loss()) + "|")
         f.write(str(end-start) + "s" + "\n")
         print()
     f.close()

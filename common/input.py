@@ -23,7 +23,7 @@ class WusnConstants:
 class WusnInput:
     def __init__(self, _W=500, _H=500, _depth=1., _height=10., _num_of_relays=10, _num_of_sensors=50,
                  _radius=20., _relays=None, _sensors=None, _BS=None, static_relay_loss=None,
-                 dynamic_relay_loss=None, sensor_loss=None):
+                 dynamic_relay_loss=None, sensor_loss=None, max_rn_conn=None):
         self.W = _W
         self.H = _H
         self.depth = _depth
@@ -34,12 +34,16 @@ class WusnInput:
         self.num_of_sensors = _num_of_sensors
         self.radius = _radius
         self.BS = _BS
+        # self.get_loss()
         self.static_relay_loss = static_relay_loss
         self.dynamic_relay_loss = dynamic_relay_loss
         self.sensor_loss = sensor_loss
+        self.max_rn_conn = max_rn_conn
 
         if None in (static_relay_loss, dynamic_relay_loss, sensor_loss):
             self.calculate_loss()
+        if max_rn_conn == None:
+            self.calculate_max_rn_conn()
 
     @classmethod
     def from_file(cls, path):
@@ -88,6 +92,31 @@ class WusnInput:
             fstr = json.dumps(d, indent=4)
             f.write(fstr)
 
+    def create_cache(self):
+        loss_file_name = str(hash(self)) + ".loss"
+        list_loss_file = os.listdir("cache")
+        if loss_file_name in list_loss_file:
+            print("Cache exist")
+        else:
+            print("Creating cache")
+            f = open("cache/" + loss_file_name, "wb")
+            self.calculate_loss()
+            data = [self.relay_loss, self.sensor_loss]
+            pickle.dump(data, f)
+            f.close()
+
+    def calculate_max_rn_conn(self):
+        max_rn_conn = {}
+        R = self.radius
+        BS = self.BS
+
+        for rn in self.relays:
+            max_rn_conn[rn] = 0
+            for sn in self.sensors:
+                if distance(sn, rn) <= 2*R:
+                    max_rn_conn[rn] += 1 
+        self.max_rn_conn = max_rn_conn
+
     @property
     def e_max(self):
         vals = []
@@ -95,7 +124,7 @@ class WusnInput:
         max_rloss = []
         for rn in self.relays:
             max_rloss.append(WusnConstants.k_bit * (self.num_of_sensors * (WusnConstants.e_rx + WusnConstants.e_da) +
-                                                    WusnConstants.e_fs * (distance(rn, self.BS) ** 4)))
+                                                    WusnConstants.e_mp * (distance(rn, self.BS) ** 4)))
         vals.extend(max_rloss)
         return max(vals)
 
