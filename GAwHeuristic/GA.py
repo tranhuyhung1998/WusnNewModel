@@ -9,12 +9,12 @@ sys.path.append(lib_path)
 from .heuristic import *
 
 
-GEN = 250
+GEN = 100
 CP = 0.8
 MP = 0.1
-NUM_OF_INDIVIDUALS = 150
-TERMINATE = 50
-alpha = 0.1
+NUM_OF_INDIVIDUALS = 100
+TERMINATE = 30
+alpha = 0.2
 
 def random_init_individual(num_relay):
     "Initial individual with any num of relay"
@@ -66,11 +66,23 @@ def mutate(original):
     fake[id1], fake[id2] = fake[id2], fake[id1]
     return fake
 
-def normalize_loss(x):
-    if x[1].loss(alpha) < 0:
+def normalize_loss(indi):
+    if indi[1].loss(alpha) < 0:
         return float("inf")
     else:
-        return x[1].loss(alpha)
+        return 10000*indi[1].loss(alpha) + indi[1].total_tranmission_loss()
+
+# def sort(individuals):
+#     ll = len(individuals)
+#     new_indis = individuals[:]
+#     for i in range(len(individuals)):
+#         for j in range(i+1, len(individuals)):
+#             if new_indis[i][1].loss(alpha) > new_indis[j][1].loss(alpha):
+#                 new_indis[i], new_indis[j] = new_indis[j], new_indis[i]
+#             elif new_indis[i][1].loss(alpha) == new_indis[j][1].loss(alpha):
+#                 if new_indis[i][1].total_tranmission_loss() > new_indis[j][1].total_tranmission_loss():
+#                     new_indis[i], new_indis[j] = new_indis[j], new_indis[i]
+#     return new_indis
 
 def GA(inp: WusnInput) -> int:
     # Khoi tao quan the
@@ -153,7 +165,9 @@ def GA(inp: WusnInput) -> int:
                     individuals.append([grand_child2, m_out2])
 
         individuals2 = sorted(individuals, key=normalize_loss)
-        individuals = individuals2[:NUM_OF_INDIVIDUALS]
+        # individuals2 = sort(individuals)
+        individuals = individuals2[:NUM_OF_INDIVIDUALS-1] 
+        individuals.append(individuals2[-1])
         if individuals[0][1].loss(alpha) < max_c:
             max_c = individuals[0][1].loss(alpha)
         if individuals[0][1].loss(alpha) == prev_max:
@@ -166,7 +180,7 @@ def GA(inp: WusnInput) -> int:
         prev_max = individuals[0][1].loss(alpha)
         end = time.time()
         print("none: %d, not_none: %d" % (none, not_none))
-        print("Gen: %d, time: %fs, min: %f %f" % (it, end - start, individuals[0][1].loss(alpha), individuals[NUM_OF_INDIVIDUALS-1][1].loss(alpha)))
+        print("Gen: %d, time: %fs, min: %f %f %f" % (it, end - start, len(individuals[0][1].used_relays), individuals[0][1].loss(alpha), individuals[NUM_OF_INDIVIDUALS-1][1].loss(alpha)))
     # print(max_c)
     return individuals[0]
 

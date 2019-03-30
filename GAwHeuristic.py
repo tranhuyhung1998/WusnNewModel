@@ -4,6 +4,8 @@ from common.input import *
 from common.point import *
 import time
 
+alpha = 0.2
+
 if __name__ == "__main__":
     # inp = WusnInput.from_file("small_data/dem3.in")
     # start = time.time()
@@ -24,13 +26,19 @@ if __name__ == "__main__":
         inp = WusnInput.from_file("data/small_data/" + str(file_name))
         start = time.time()
         res = GA(inp)[1]
+        num_used_relays = len(res.used_relays)
+        consumption = res.max_consumption()
         end = time.time()
         print(end-start)
+
         f.write(str(file_name) + "|")
-        f.write(str(res.loss()) + "|")
+        f.write(str(num_used_relays) + "|")
+        f.write(str(consumption) + "|")
+        f.write(str(res.loss(alpha)) + "|")
         f.write(str(end-start) + "s" + "\n")
         print()
     f.close()
+
 
     # f = open("medium_data_result.txt", "w+")
     # file_list = os.listdir("medium_data")

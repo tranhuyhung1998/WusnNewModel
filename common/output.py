@@ -54,15 +54,41 @@ class WusnOutput:
             ls = self.inp.sensor_loss[(sn, rn)]
             if ls > l2:
                 l2 = ls
+
         for rn in ur:
             conns = list(filter(lambda x: x == rn, self.mapping.values()))
             ls = WusnConstants.k_bit * (len(conns) * (WusnConstants.e_rx + WusnConstants.e_da) +
-                                        WusnConstants.e_fs * (distance(rn, self.inp.BS) ** 4))
+                                        WusnConstants.e_mp * (distance(rn, self.inp.BS) ** 4))
             if ls > l2:
                 l2 = ls
 
         l2 = l2 / self.inp.e_max * (1 - alpha)
         return l1 + l2
+    
+    def max_consumption(self):
+        ur = self.used_relays
+        l2 = -float('inf')
+        for rn in ur:
+            conns = list(filter(lambda x: x == rn, self.mapping.values()))
+            ls = WusnConstants.k_bit * (len(conns) * (WusnConstants.e_rx + WusnConstants.e_da) +
+                                        WusnConstants.e_mp * (distance(rn, self.inp.BS) ** 4))
+            if ls > l2:
+                l2 = ls
+        return l2
+    
+    def total_tranmission_loss(self):
+        total = 0
+        ur = self.used_relays
+        for sn, rn in self.mapping.items():
+            ls = self.inp.sensor_loss[(sn, rn)]
+            total+=ls
+        for rn in ur:
+            conns = list(filter(lambda x: x == rn, self.mapping.values()))
+            ls = WusnConstants.k_bit * (len(conns) * (WusnConstants.e_rx + WusnConstants.e_da) +
+                                        WusnConstants.e_mp * (distance(rn, self.inp.BS) ** 4))
+            total+=ls
+            
+        return total
 
     @classmethod
     def from_dict(cls, d):
