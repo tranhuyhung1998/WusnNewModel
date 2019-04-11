@@ -32,7 +32,8 @@ def model_lp(inp: WusnInput, alpha=0.5, lax=False):
     prob = pulp.LpProblem('RelaySelection', pulp.LpMinimize)
 
     # Variables
-    Z = [LpVariable('z_%d' % j, lowBound=0, upBound=1, cat=var_cls) for j in range(m)]
+    # Z = [LpVariable('z_%d' % j, lowBound=0, upBound=1, cat=var_cls) for j in range(m)]
+    Z = [LpVariable('z_%d' % j, lowBound=0, upBound=1, cat=pulp.LpBinary) for j in range(m)]
     Z = np.asarray(Z, dtype=object)
     A = []
     for i in range(n):
@@ -88,7 +89,7 @@ def solve(inp: WusnInput, save_path, alpha=0.5, lax=False):
         prob = model_lp(inp, alpha, lax)
         log('Solving LP')
         prob.solve()
-
+    
         if prob.status == pulp.LpStatusOptimal:
             log('Converting')
             out = output_from_prob(prob, inp)
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     save_paths = map(lambda x: os.path.split(x)[-1].split('.')[0], save_paths)
     save_paths = map(lambda x: os.path.join(args_.outdir, x), save_paths)
     save_paths = map(lambda x: x + '.out', save_paths)
-    save_paths = list(save_paths)
+    save_paths = list(save_paths)[:4]
 
     inputs = list(map(lambda x: WusnInput.from_file(x), args_.input))
     logger.info('Solving %d problems' % len(inputs))

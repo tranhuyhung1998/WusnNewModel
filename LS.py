@@ -174,7 +174,9 @@ def LS(inp: WusnInput, alpha):
     print('Relays used: ', len(np.where(np.array(best_sol) > 0)[0]))
     print('Best value: {}. Best sum: {}'.format(best_value, best_sum))
     print('Best solution: {}\n'.format(best_sol))
+    print(max_rn_conn)
     for k in range(max_iteration):
+        break;
         sol_k = best_sol
         value_k = best_value
         sum_k = best_sum
