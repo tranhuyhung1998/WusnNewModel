@@ -155,7 +155,7 @@ if __name__ == '__main__':
     save_paths = map(lambda x: os.path.split(x)[-1].split('.')[0], save_paths)
     save_paths = map(lambda x: os.path.join(args_.outdir, x), save_paths)
     save_paths = map(lambda x: x + '.out', save_paths)
-    save_paths = list(save_paths)[:4]
+    save_paths = list(save_paths)
 
     inputs = list(map(lambda x: WusnInput.from_file(x), args_.input))
     logger.info('Solving %d problems' % len(inputs))

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DATASET=${1-"small"}
-PROCS=4
+PROCS=2
 ALPHA=0.5
 
 python3 exact.py -p $PROCS --alpha $ALPHA\
