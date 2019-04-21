@@ -82,7 +82,9 @@ def solve(inp: WusnInput, save_path, alpha=0.5, lax=False):
 
     def log(msg, level=logging.INFO):
         lz.logger.log(level, '[%s] %s' % (save_path, msg))
-
+    if os.path.exists(save_path):
+        log('Exist')
+        return
     inp.freeze()
     try:
         log('Modeling LP')
@@ -94,8 +96,10 @@ def solve(inp: WusnInput, save_path, alpha=0.5, lax=False):
             log('Converting')
             out = output_from_prob(prob, inp)
             log('Saving')
-            out.to_file(save_path)
-            print('[%s] %.8e' % (save_path, prob.objective.value()))
+            # out.to_file(save_path)
+            # with open('')
+            with open(save_path, 'w+') as f:
+                f.write('[%s] %.8e' % (save_path, prob.objective.value()))
         else:
             log('Unsolvable', level=logging.WARN)
             print('[%s] UNSOLVED' % (save_path,))
@@ -142,7 +146,7 @@ def parse_arguments():
     parser.add_argument('--alpha', type=float, default=0.5, help='Alpha coefficient')
     parser.add_argument('--lax', action='store_true')
     parser.add_argument('-o', '--outdir', default='results/exact')
-
+    parser.add_argument('-i', '--iteration', default=1)
     return parser.parse_args()
 
 
@@ -154,10 +158,11 @@ if __name__ == '__main__':
     save_paths = args_.input
     save_paths = map(lambda x: os.path.split(x)[-1].split('.')[0], save_paths)
     save_paths = map(lambda x: os.path.join(args_.outdir, x), save_paths)
-    save_paths = map(lambda x: x + '.out', save_paths)
+    save_paths = map(lambda x: x + '.out' + str(args_.iteration), save_paths)
     save_paths = list(save_paths)
 
     inputs = list(map(lambda x: WusnInput.from_file(x), args_.input))
+
     logger.info('Solving %d problems' % len(inputs))
     if args_.lax:
         logger.info('Approximating...')
