@@ -1,0 +1,1 @@
+python LS.py --indir=medium_data --alpha=0.5
