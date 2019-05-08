@@ -159,7 +159,7 @@ if __name__ == '__main__':
     save_paths = map(lambda x: os.path.split(x)[-1].split('.')[0], save_paths)
     save_paths = map(lambda x: os.path.join(args_.outdir, x), save_paths)
     save_paths = map(lambda x: x + '.out' + str(args_.iteration), save_paths)
-    save_paths = list(save_paths)
+    save_paths = [x for x in list(save_paths) if 'uu' not in x]
 
     inputs = list(map(lambda x: WusnInput.from_file(x), args_.input))
 
