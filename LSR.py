@@ -357,11 +357,11 @@ if __name__ == '__main__':
 
         f = open(outpath, 'w+')
 
-        file_list = os.listdir(os.path.join('data', args_.indir))[:1]
+        file_list = os.listdir(os.path.join('data', args_.indir))
         f.write('input | objective | relays used | energy consumption | emax | iterations\n')
 
         for file_name in file_list:
-            if file_name == 'BOUND' or 'LS' in file_name or file_name == '.DS_Store':
+            if 'BOUND' in file_name or 'LS' in file_name or file_name == '.DS_Store':
                 continue
             print(file_name)
             ls = LocalSearch(os.path.join("data",args_.indir,str(file_name)), alpha = args_.alpha, random_initial_state = args_.init)
