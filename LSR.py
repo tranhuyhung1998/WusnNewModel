@@ -317,7 +317,7 @@ class LocalSearch():
                 best_sum = state.cumulative_energy_consumption
             else:
                 break
-
+                
             candidates.clear()
 
         return best_value, len(np.where(np.array(best_sol) > 0)[0]), self.cal_energy(self.BSR(best_sol), best_sol), k+1
@@ -355,16 +355,19 @@ if __name__ == '__main__':
         if os.path.exists(outpath):
             continue
 
-        f = open(outpath, 'w+')
-
         file_list = os.listdir(os.path.join('data', args_.indir))
-        f.write('input | objective | relays used | energy consumption | emax | iterations\n')
 
         for file_name in file_list:
             if 'BOUND' in file_name or 'LS' in file_name or file_name == '.DS_Store':
+                continue
+
+            outpath = os.path.join(dirpath, '{}_{}.out'.format(file_name.split('.')[0], i))
+            if os.path.exists(outpath):
                 continue
             print(file_name)
             ls = LocalSearch(os.path.join("data",args_.indir,str(file_name)), alpha = args_.alpha, random_initial_state = args_.init)
 
             best_value, relays_used, energy, iter = ls.search()
-            f.write('{} {} {} {} {} {}\n'.format(file_name, best_value, relays_used, energy, ls.inp.e_max, iter))
+
+            with open(outpath, 'w+') as f:
+                f.write('{} {} {} {} {} {}\n'.format(file_name, best_value, relays_used, energy, ls.inp.e_max, iter))
