@@ -89,7 +89,7 @@ class LocalSearch():
                     quant = randint(0, min(reduce_quantity, sol[index]))
                     sol[index] -= quant
                     reduce_quantity -= quant
-                print(counter, sol, sum(sol))
+
                 max_flow = self.BSR(sol)
                 if max_flow == -1:
                     continue
