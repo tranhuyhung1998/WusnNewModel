@@ -375,7 +375,7 @@ if __name__ == '__main__':
         file_list = os.listdir(os.path.join('data', args_.indir))
 
         for file_name in file_list:
-            if 'BOUND' in file_name or 'LS' in file_name or file_name == '.DS_Store':
+            if not file_name.endswith('.in'):
                 continue
 
             outpath = os.path.join(dirpath, '{}_{}.out'.format(file_name.split('.')[0], i))
