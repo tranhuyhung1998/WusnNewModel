@@ -56,6 +56,12 @@ class LocalSearch():
         self.candidate_size = candidate_size
         self.max_rn_conn = [self.inp.max_rn_conn[k] for k in self.inp.max_rn_conn]
 
+        self.success = True
+        self.best_value = None
+        self.energy = None
+        self.iter = None
+        self.relays_used = None
+
     def initial_state(self):
         sol = []
         max_flow = None
@@ -67,7 +73,14 @@ class LocalSearch():
                 if max_flow.Head(i) == self.inp.num_of_relays + self.inp.num_of_sensors + 1:
                     sol.append(max_flow.Flow(i))
         else:
+            counter = 0
+
             while True:
+                counter += 1
+                if counter > 10000:
+                    self.success = False
+                    return None, None
+
                 sol = copy(self.max_rn_conn)
                 reduce_quantity = sum(sol) - self.inp.num_of_sensors
 
@@ -76,7 +89,7 @@ class LocalSearch():
                     quant = randint(0, min(reduce_quantity, sol[index]))
                     sol[index] -= quant
                     reduce_quantity -= quant
-
+                print(counter, sol, sum(sol))
                 max_flow = self.BSR(sol)
                 if max_flow == -1:
                     continue
@@ -222,6 +235,8 @@ class LocalSearch():
         candidates = FixedSizeOrderedStates(size=self.candidate_size)
         
         sol, max_flow = self.initial_state()
+        if self.success == False:
+            return None
 
         best_value, best_sum = self.cal_value(max_flow, sol)
         best_sol = sol
@@ -320,8 +335,10 @@ class LocalSearch():
                 
             candidates.clear()
 
-        return best_value, len(np.where(np.array(best_sol) > 0)[0]), self.cal_energy(self.BSR(best_sol), best_sol), k+1
-
+        self.best_value = best_value
+        self.relays_used = len(np.where(np.array(best_sol) > 0)[0])
+        self.energy = self.cal_energy(self.BSR(best_sol), best_sol)
+        self.iter = k + 1
 
 def parse_arguments():
     parser = ArgumentParser()
@@ -367,7 +384,9 @@ if __name__ == '__main__':
             print(file_name)
             ls = LocalSearch(os.path.join("data",args_.indir,str(file_name)), alpha = args_.alpha, random_initial_state = args_.init)
 
-            best_value, relays_used, energy, iter = ls.search()
+            ls.search()
+
+            best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
 
             with open(outpath, 'w+') as f:
                 f.write('{} {} {} {} {} {}\n'.format(file_name, best_value, relays_used, energy, ls.inp.e_max, iter))
