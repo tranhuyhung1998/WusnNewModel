@@ -381,6 +381,7 @@ def parse_arguments():
 
     return parser.parse_args()
 
+# uu-dem10_r25_1.in 
 if __name__ == '__main__':
     if "small_data_result.txt" in os.listdir("."):
         os.remove("small_data_result.txt")
@@ -400,10 +401,8 @@ if __name__ == '__main__':
         file_list = os.listdir(os.path.join('data', args_.indir))
         outpaths = []
         for filename in file_list:
-            if not filename.endswith('.in'):
-                continue
-
-            outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
+            if filename.endswith('.in'):
+                outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
 
 
         joblib.Parallel(n_jobs=args_.procs)(
