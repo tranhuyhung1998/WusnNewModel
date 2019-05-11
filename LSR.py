@@ -3,7 +3,7 @@ import time
 from ortools.graph import pywrapgraph
 from common.input import WusnInput
 from copy import copy, deepcopy
-from random import randint
+from random import randint, choice
 from common.point import distance
 import numpy as np
 import math
@@ -79,27 +79,21 @@ class LocalSearch():
                 if max_flow.Head(i) == self.inp.num_of_relays + self.inp.num_of_sensors + 1:
                     sol.append(max_flow.Flow(i))
         else:
-            counter = 0
+            sensors_arr = [k for k in self.inp.sensors]
+            relays_arr = [k for k in self.inp.relays]
 
-            while True:
-                counter += 1
-                if counter > 10000:
-                    self.success = False
-                    return None, None
+            N, M = self.inp.num_of_sensors, self.inp.num_of_relays
+            
+            sol = [0]*M
 
-                sol = copy(self.max_rn_conn)
-                reduce_quantity = sum(sol) - self.inp.num_of_sensors
+            for i in range(N):
+                reachable_relays = []
+                for j in range(M):
+                    if distance(sensors_arr[i], relays_arr[j]) <= 2*self.inp.radius:
+                        reachable_relays.append(j)
+                sol[choice(reachable_relays)] += 1
 
-                while reduce_quantity != 0:
-                    index = randint(0, self.inp.num_of_sensors - 1)
-                    quant = randint(0, min(reduce_quantity, sol[index]))
-                    sol[index] -= quant
-                    reduce_quantity -= quant
-
-                max_flow = self.BSR(sol)
-                if max_flow == -1:
-                    continue
-                break
+            max_flow = self.solve_max_flow(sol, self.inp.radius)
 
         return sol, max_flow
 
@@ -338,7 +332,7 @@ class LocalSearch():
                 best_sum = state.cumulative_energy_consumption
             else:
                 break
-                
+
             candidates.clear()
 
         self.best_value = best_value
@@ -374,7 +368,6 @@ def parse_arguments():
 
     parser.add_argument('--alpha', type=float, default=0.5,
                         help='Alpha coefficient')
-    # parser.add_argument('--outdir', type=str, default='data/small_data/LS')
     parser.add_argument('--indir', type=str, default='small_data')
     parser.add_argument('--init', type=int, default=0, help='random initialization flags')
     parser.add_argument('-p', '--procs', type=int, default=4, help='Number of processes to fork')
@@ -398,11 +391,10 @@ if __name__ == '__main__':
 
     for i in range(1,21):
 
-        file_list = os.listdir(os.path.join('data', args_.indir))
+        file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in')]
         outpaths = []
         for filename in file_list:
-            if filename.endswith('.in'):
-                outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
+            outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
 
 
         joblib.Parallel(n_jobs=args_.procs)(
