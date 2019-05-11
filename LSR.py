@@ -10,6 +10,12 @@ import math
 from common.output import WusnOutput
 from argparse import ArgumentParser
 from copy import copy 
+import joblib
+import importlib
+
+import logging
+import logzero
+from logzero import logger
 
 class State():
     def __init__(self, objective_value, cumulative_energy_consumption, solution):
@@ -100,7 +106,7 @@ class LocalSearch():
     def if_valid(self, sol, best_value):
         value = -float('inf')
         
-        sensors_arr = [k for k in self.inp.sensors]
+        # sensors_arr = [k for k in self.inp.sensors]
         relays_arr = [k for k in self.inp.relays]
 
         activated_relays = np.where(np.array(sol) > 0)[0]
@@ -334,11 +340,35 @@ class LocalSearch():
                 break
                 
             candidates.clear()
+            break
 
         self.best_value = best_value
         self.relays_used = len(np.where(np.array(best_sol) > 0)[0])
         self.energy = self.cal_energy(self.BSR(best_sol), best_sol)
         self.iter = k + 1
+
+def solve(filename, outpath):
+    lz = importlib.reload(logzero)
+
+    def log(msg, level=logging.INFO):
+        lz.logger.log(level, '[%s] %s' % (filename, msg))
+
+    if os.path.exists(outpath):
+        log('Exists')
+        return None
+    try: 
+        log('Solving')
+        ls = LocalSearch(os.path.join("data",args_.indir,str(filename)), alpha = args_.alpha, random_initial_state = args_.init)
+        ls.search()
+
+        best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
+        log('Saving')
+        with open(outpath, 'w+') as f:
+            f.write('{} {} {} {} {} {}\n'.format(filename, best_value, relays_used, energy, ls.inp.e_max, iter))
+
+    except Exception as e:
+        log('Weird things happened')
+        raise e
 
 def parse_arguments():
     parser = ArgumentParser()
@@ -348,8 +378,9 @@ def parse_arguments():
     # parser.add_argument('--outdir', type=str, default='data/small_data/LS')
     parser.add_argument('--indir', type=str, default='small_data')
     parser.add_argument('--init', type=int, default=0, help='random initialization flags')
-    return parser.parse_args()
+    parser.add_argument('-p', '--procs', type=int, default=4, help='Number of processes to fork')
 
+    return parser.parse_args()
 
 if __name__ == '__main__':
     if "small_data_result.txt" in os.listdir("."):
@@ -366,27 +397,29 @@ if __name__ == '__main__':
         os.mkdir(dirpath)
 
     for i in range(1,21):
-        print("{} Times".format(i))
-        outpath = os.path.join(dirpath, 'LS{}'.format(i))
-
-        if os.path.exists(outpath):
-            continue
 
         file_list = os.listdir(os.path.join('data', args_.indir))
-
-        for file_name in file_list:
-            if not file_name.endswith('.in'):
+        outpaths = []
+        for filename in file_list:
+            if not filename.endswith('.in'):
                 continue
 
-            outpath = os.path.join(dirpath, '{}_{}.out'.format(file_name.split('.')[0], i))
-            if os.path.exists(outpath):
-                continue
-            print(file_name)
-            ls = LocalSearch(os.path.join("data",args_.indir,str(file_name)), alpha = args_.alpha, random_initial_state = args_.init)
+            outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
 
-            ls.search()
 
-            best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
+        joblib.Parallel(n_jobs=args_.procs)(
+                joblib.delayed(solve)(filename, outpath) for filename, outpath in zip(file_list, outpaths)
+            )
 
-            with open(outpath, 'w+') as f:
-                f.write('{} {} {} {} {} {}\n'.format(file_name, best_value, relays_used, energy, ls.inp.e_max, iter))
+            # outpath = os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i))
+            # if os.path.exists(outpath):
+            #     continue
+            # print(filename)
+            # ls = LocalSearch(os.path.join("data",args_.indir,str(filename)), alpha = args_.alpha, random_initial_state = args_.init)
+
+            # ls.search()
+
+            # best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
+
+            # with open(outpath, 'w+') as f:
+            #     f.write('{} {} {} {} {} {}\n'.format(filename, best_value, relays_used, energy, ls.inp.e_max, iter))
