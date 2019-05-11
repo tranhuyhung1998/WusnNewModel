@@ -1,8 +1,18 @@
-import random, os, sys
+import os, sys
 lib_path = os.path.abspath(os.path.join('..'))
 sys.path.append(lib_path)
 
-from input import *
+from common.input import *
+
+# Unit: J
+E_Tx = 50*1e-9
+E_Rx = 50*1e-9
+e_fs = 10*1e-12
+e_da = 10*1e-12
+e_mp = 0.0
+
+# Num of bits
+k_bit = 4000
 
 def get_relay_list(individual):
     relay_list = []
@@ -19,7 +29,7 @@ def generate_connect_matrix(inp: WusnInput, individual):
         count = 0
         for i in range (0, len(individual)):
             if individual[i] == 1:
-                if distance(sn, inp.relays[i]) <= 2*R:
+                if distance(sn, inp.relays[i]) <= 2*inp.radius:
                     connect[(sn, inp.relays[i])] = 1
                     count += 1
         if count == 0:
@@ -32,7 +42,8 @@ def heuristic(inp: WusnInput, individual):
         return None, 9999, 9999
     relay_list = get_relay_list(individual)
     num_sensors_to_relay = [0] * len(individual)
-    basic_relays_loss = inp.relay_loss
+    static_relay_loss = inp.static_relay_loss
+    dynamic_relay_loss = inp.dynamic_relay_loss
     sensor_loss = inp.sensor_loss
     selected_relay_list = []
 
@@ -47,7 +58,7 @@ def heuristic(inp: WusnInput, individual):
         for rn_id in relay_list:
             if (inp.sensors[i], inp.relays[rn_id]) in connect:
                 loss1 = sensor_loss[(inp.sensors[i], inp.relays[rn_id])]
-                loss2 = (num_sensors_to_relay[rn_id] + 1) * basic_relays_loss[inp.relays[rn_id]]
+                loss2 = (num_sensors_to_relay[rn_id] + 1) * dynamic_relay_loss[inp.relays[rn_id]] + static_relay_loss[inp.relays[rn_id]]
                 local_max = max(loss1, loss2)
                 if local_max < min_max:
                     min_max = local_max

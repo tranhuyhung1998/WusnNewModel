@@ -1,9 +1,7 @@
-import time
-from input import *
 from GAwLS import *
 
 if __name__ == '__main__':
-    inp = WusnInput.from_file("small_data/dem1.in")
+    inp = WusnInput.from_file("data/small_data/dem1.in")
     start = time.time()
     abc = GA(inp)
     # print(inp.base_station)

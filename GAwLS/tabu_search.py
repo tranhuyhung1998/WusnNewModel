@@ -1,7 +1,7 @@
 import os, sys, random
 lib_path = os.path.abspath(os.path.join('..'))
 sys.path.append(lib_path)
-from input import *
+from common.input import *
 max_iteration = 70
 max_stable = 20
 tabu_len = 10

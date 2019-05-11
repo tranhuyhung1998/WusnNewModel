@@ -1,9 +1,7 @@
-import random, time, os, sys
+import time, os, sys
 lib_path = os.path.abspath(os.path.join('..'))
 sys.path.append(lib_path)
 
-from input import *
-from .tabu_search import *
 from .tabu_search import *
 
 GEN = 1000
