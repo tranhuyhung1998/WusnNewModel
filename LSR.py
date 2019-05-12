@@ -317,7 +317,10 @@ class LocalSearch():
                         if self.if_valid(solc, candidates.worst_state()[0]):
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
-                                continue                            
+                                continue    
+
+                            value, sum = self.cal_value(max_flow, solc)
+                        
                             if (value, sum) < candidates.worst_state():
                                 candidates.add(State(value, sum, solc))
 
