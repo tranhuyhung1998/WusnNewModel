@@ -14,7 +14,7 @@ CP = 0.8
 MP = 0.1
 NUM_OF_INDIVIDUALS = 100
 TERMINATE = 30
-alpha = 0.2
+alpha = 0.5
 
 def random_init_individual(num_relay):
     "Initial individual with any num of relay"
