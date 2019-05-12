@@ -63,6 +63,7 @@ class WusnOutput:
                 l2 = ls
 
         l2 = l2 / self.inp.e_max * (1 - alpha)
+
         return l1 + l2
     
     def max_consumption(self):

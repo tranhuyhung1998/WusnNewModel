@@ -1,4 +1,5 @@
-numpy
-pulp
-logzero
-joblib
+joblib==0.13.2
+logzero==1.5.0
+numpy==1.16.2
+PuLP==1.6.9
+pyparsing==2.4.0

@@ -1,12 +1,11 @@
 import os
-import random
 import sys
 sys.path.append('.')
 
 from logzero import logger
 from argparse import ArgumentParser
 from scipy import interpolate
-
+import numpy as np
 
 from common.point import Point, SensorNode, RelayNode, distance
 from common.dems_input import DemsInput
@@ -22,7 +21,7 @@ def parse_arguments():
     parser.add_argument('-H', type=int, default=200)
     parser.add_argument('--rows', type=int, default=41)
     parser.add_argument('--cols', type=int, default=41)
-    parser.add_argument('--cdepth', type=int, default=5)
+    parser.add_argument('--csize', type=int, default=25)
     parser.add_argument('-n', '--count', type=int, default=1)
     parser.add_argument('--depth', type=float, default=1)
     parser.add_argument('--height', type=float, default=10)
@@ -30,13 +29,25 @@ def parse_arguments():
     parser.add_argument('--nr', '--num-relay', type=int, default=40)
     parser.add_argument('--radius', default='25,30,45,50')
     parser.add_argument('--prefix', default='uu-')
-
+    parser.add_argument('--distribution', type=str, default="uniform")
     return parser.parse_args()
 
 
-def uniform_point(dinp, xrange, yrange, z_off=0, cls=Point):
-    x = random.uniform(*xrange)
-    y = random.uniform(*yrange)
+def point(dinp, xrange, yrange, z_off=0, cls=Point, distribution="uniform"):
+    epsilon = 1e-3
+    #distribution = {uniform, gaussian, gamma}
+    if distribution == "uniform":
+        x = np.random.uniform(*xrange)
+        y = np.random.uniform(*yrange)
+    
+    if distribution == "gaussian":
+        x = np.clip(np.random.normal(xrange[1]/2, xrange[1]/4), xrange[0], xrange[1]-epsilon)
+        y = np.clip(np.random.normal(yrange[1]/2, yrange[1]/4), yrange[0], yrange[1]-epsilon)
+
+    if distribution == "gamma":
+        x = np.clip(np.random.gamma(2, 1.5)*xrange[1]/10, xrange[0], xrange[1]-epsilon)
+        y = np.clip(np.random.gamma(2, 1.5)*yrange[1]/10, yrange[0], yrange[1]-epsilon)
+
     z = estimate(x, y, dinp) + z_off
     return cls(x, y, z)
 
@@ -61,11 +72,11 @@ def is_covered(sn, relays_, radius):
 if __name__ == '__main__':
     args = parse_arguments()
     os.makedirs(args.output, exist_ok=True)
-
+    print(args.distribution)
     radi = list(map(lambda x: int(x), args.radius.split(',')))
     for inp_ in args.dems:
         dem = DemsInput.from_file(inp_)
-        dem.scale(args.cols, args.rows, args.cdepth)
+        dem.scale(args.cols, args.rows, args.csize)
         dname = os.path.split(inp_)[-1].split('.')[0]
         for r in radi:
             for i in range(args.count):
@@ -77,8 +88,7 @@ if __name__ == '__main__':
                 # Generate random relays
                 relays = []
                 for j in range(args.nr):
-                    rn = uniform_point(dem, (0, dem.cols), (0, dem.rows),
-                                       z_off=args.height, cls=RelayNode)
+                    rn = point(dem, (0, args.W), (0, args.H), z_off=args.height, cls=RelayNode, distribution=args.distribution)
                     relays.append(rn)
                     center_x += rn.x
                     center_y += rn.y
@@ -87,8 +97,7 @@ if __name__ == '__main__':
                 for j in range(args.ns):
                     ok, sn = False, None
                     while not ok:
-                        sn = uniform_point(dem, (0, dem.cols), (0, dem.rows),
-                                           z_off=-args.depth, cls=SensorNode)
+                        sn = point(dem, (0, args.W), (0, args.H), z_off=-args.depth, cls=SensorNode, distribution=args.distribution)
                         ok = is_covered(sn, relays, r)
                     sensors.append(sn)
                     center_x += sn.x
@@ -103,6 +112,12 @@ if __name__ == '__main__':
                                 _height=args.height, _num_of_relays=args.nr,
                                 _num_of_sensors=args.ns, _relays=relays,
                                 _sensors=sensors, _BS=bs, _radius=r)
+
                 res.to_file(fpath)
+        #         break
+        #     break
+        # break
+                # print(args.W, args.H)
+
 
     logger.info('Done')
