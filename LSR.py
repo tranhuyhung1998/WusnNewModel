@@ -335,7 +335,12 @@ class LocalSearch():
                 best_sum = state.cumulative_energy_consumption
             else:
                 break
-
+            
+            print("k", k)
+            print("best_sol", best_sol)
+            print("best_value", best_value)
+            print("best_sum", best_sum)
+            
             candidates.clear()
 
         self.best_value = best_value
