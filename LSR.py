@@ -241,6 +241,9 @@ class LocalSearch():
         best_value, best_sum = self.cal_value(max_flow, sol)
         best_sol = sol
         
+        print(best_sol)
+        print(best_value, best_sum)
+
         k = 0
         for k in range(self.max_iteration):
             candidates.add(State(best_value, best_sum, sol))
