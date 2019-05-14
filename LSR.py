@@ -247,7 +247,7 @@ class LocalSearch():
         k = 0
         for k in range(self.max_iteration):
             print(k)
-            
+
             candidates.add(State(best_value, best_sum, sol))
             #move
             for i in range(len(sol)):
@@ -339,6 +339,7 @@ class LocalSearch():
                 best_value = state.objective_value
                 best_sum = state.cumulative_energy_consumption
             else:
+                print('askdakdk')
                 break
             
             print("k", k)
@@ -350,6 +351,7 @@ class LocalSearch():
 
         self.best_value = best_value
         self.relays_used = len(np.where(np.array(best_sol) > 0)[0])
+        print(best_sol, sum(best_sol))
         print(self.BSR(best_sol))
         self.energy = self.cal_energy(self.BSR(best_sol), best_sol)
         self.iter = k + 1
