@@ -378,6 +378,7 @@ def parse_arguments():
     return parser.parse_args()
 
 # uu-dem10_r25_1.in 
+# uu-dem10_r25_1.in
 if __name__ == '__main__':
     if "small_data_result.txt" in os.listdir("."):
         os.remove("small_data_result.txt")
@@ -392,7 +393,7 @@ if __name__ == '__main__':
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
 
-    for i in range(1,21):
+    for i in range(1,11):
 
         file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in')]
         outpaths = []
