@@ -79,6 +79,7 @@ class LocalSearch():
             for i in range(max_flow.NumArcs()):
                 if max_flow.Head(i) == self.inp.num_of_relays + self.inp.num_of_sensors + 1:
                     sol.append(max_flow.Flow(i))
+            print(sol, sum(sol))
         else:
             sensors_arr = [k for k in self.inp.sensors]
             relays_arr = [k for k in self.inp.relays]
