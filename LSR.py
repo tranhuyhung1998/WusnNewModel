@@ -71,7 +71,7 @@ class LocalSearch():
     def initial_state(self):
         sol = []
         max_flow = None
-        print(self.max_rn_conn)
+
         if self.random_initial_state == 0:
             sol = []
             max_flow = self.solve_max_flow(self.max_rn_conn, self.inp.radius)
@@ -409,16 +409,3 @@ if __name__ == '__main__':
         joblib.Parallel(n_jobs=args_.procs)(
                 joblib.delayed(solve)(filename, outpath) for filename, outpath in zip(file_list, outpaths)
             )
-
-            # outpath = os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i))
-            # if os.path.exists(outpath):
-            #     continue
-            # print(filename)
-            # ls = LocalSearch(os.path.join("data",args_.indir,str(filename)), alpha = args_.alpha, random_initial_state = args_.init)
-
-            # ls.search()
-
-            # best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
-
-            # with open(outpath, 'w+') as f:
-            #     f.write('{} {} {} {} {} {}\n'.format(filename, best_value, relays_used, energy, ls.inp.e_max, iter))
