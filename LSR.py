@@ -348,6 +348,7 @@ class LocalSearch():
 
         self.best_value = best_value
         self.relays_used = len(np.where(np.array(best_sol) > 0)[0])
+        print(self.BSR(best_sol))
         self.energy = self.cal_energy(self.BSR(best_sol), best_sol)
         self.iter = k + 1
 
