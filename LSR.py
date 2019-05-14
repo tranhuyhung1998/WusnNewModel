@@ -74,6 +74,7 @@ class LocalSearch():
 
         if self.random_initial_state == 0:
             sol = []
+            print(self.max_rn_conn, sum(self.max_rn_conn))
             max_flow = self.solve_max_flow(self.max_rn_conn, self.inp.radius)
             for i in range(max_flow.NumArcs()):
                 if max_flow.Head(i) == self.inp.num_of_relays + self.inp.num_of_sensors + 1:
@@ -405,9 +406,10 @@ if __name__ == '__main__':
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
 
-    for i in range(1,11):
+    for i in range(1,2):
 
         file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in')]
+        file_list = ['uu-dem10_r25_1.in']
         outpaths = []
         for filename in file_list:
             outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
