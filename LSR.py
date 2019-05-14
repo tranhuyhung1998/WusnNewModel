@@ -60,7 +60,7 @@ class LocalSearch():
         self.max_iteration = max_iteration
         self.random_initial_state = random_initial_state
         self.candidate_size = candidate_size
-        self.max_rn_conn = [self.inp.max_rn_conn[k] for k in self.inp.max_rn_conn]
+        self.max_rn_conn = self.inp.max_rn_conn
 
         self.success = True
         self.best_value = None
@@ -71,18 +71,13 @@ class LocalSearch():
     def initial_state(self):
         sol = []
         max_flow = None
-
+        print(self.max_rn_conn)
         if self.random_initial_state == 0:
             sol = []
-            print(self.max_rn_conn, sum(self.max_rn_conn))
             max_flow = self.solve_max_flow(self.max_rn_conn, self.inp.radius)
-            print(max_flow.NumArcs())
             for i in range(max_flow.NumArcs()):
-                # if max_flow.Head(i) == self.inp.num_of_relays + self.inp.num_of_sensors + 1:
-                print(max_flow.Tail(i), max_flow.Head(i), max_flow.Flow(i))
                 if max_flow.Head(i) == self.inp.num_of_relays + self.inp.num_of_sensors + 1:
                     sol.append(max_flow.Flow(i))
-            print("asdsad", sol, sum(sol), len(sol))
         else:
             sensors_arr = [k for k in self.inp.sensors]
             relays_arr = [k for k in self.inp.relays]
@@ -195,7 +190,7 @@ class LocalSearch():
         relays_arr = [k for k in self.inp.relays]
 
         value = -float('inf')
-        total_energy_consumption = 0
+        sum = 0
 
         activated_relays = np.where(np.array(sol) > 0)[0]
 
@@ -203,7 +198,7 @@ class LocalSearch():
             relay_idx = activated_relays[i]
             value = max([value, self.inp.static_relay_loss[relays_arr[relay_idx]] +
                         sol[relay_idx]*self.inp.dynamic_relay_loss[relays_arr[relay_idx]]])
-            total_energy_consumption += self.inp.static_relay_loss[relays_arr[relay_idx]] + \
+            sum += self.inp.static_relay_loss[relays_arr[relay_idx]] + \
                 sol[relay_idx]*self.inp.dynamic_relay_loss[relays_arr[relay_idx]]
 
         for i in range(max_flow.NumArcs()):
@@ -212,7 +207,7 @@ class LocalSearch():
                     i)-1, max_flow.Head(i)-1-self.inp.num_of_sensors
                 value = max(value, self.inp.sensor_loss[(
                     sensors_arr[tail], relays_arr[head])])
-                total_energy_consumption += self.inp.sensor_loss[(sensors_arr[tail], relays_arr[head])]
+                sum += self.inp.sensor_loss[(sensors_arr[tail], relays_arr[head])]
 
         return value
 
@@ -246,13 +241,8 @@ class LocalSearch():
         best_value, best_sum = self.cal_value(max_flow, sol)
         best_sol = sol
         
-        print(best_sol, sum(best_sol))
-        print(best_value, best_sum)
-
         k = 0
         for k in range(self.max_iteration):
-            print(k)
-
             candidates.add(State(best_value, best_sum, sol))
             #move
             for i in range(len(sol)):
@@ -270,9 +260,9 @@ class LocalSearch():
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
                                 continue                            
-                            value, total_energy = self.cal_value(max_flow, solc)
-                            if (value, total_energy) < candidates.worst_state():
-                                candidates.add(State(value, total_energy, solc))
+                            value, sum = self.cal_value(max_flow, solc)
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))
 
             #move 1 connection
             for i in range(len(sol)):
@@ -285,10 +275,10 @@ class LocalSearch():
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
                                 continue                            
-                            
-                            value, total_energy = self.cal_value(max_flow, solc)
-                            if (value, total_energy) < candidates.worst_state():
-                                candidates.add(State(value, total_energy, solc))
+                            value, sum = self.cal_value(max_flow, solc)
+
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))
 
             #swap connections
             for i in range(len(sol)):
@@ -303,10 +293,10 @@ class LocalSearch():
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
                                 continue                            
-
-                            value, total_energy = self.cal_value(max_flow, solc)
-                            if (value, total_energy) < candidates.worst_state():
-                                candidates.add(State(value, total_energy, solc))   
+                            value, sum = self.cal_value(max_flow, solc)
+                            
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))            
 
             #share connections
             for i in range(len(sol)):
@@ -329,9 +319,10 @@ class LocalSearch():
                             if max_flow == -1:
                                 continue    
 
-                            value, total_energy = self.cal_value(max_flow, solc)
-                            if (value, total_energy) < candidates.worst_state():
-                                candidates.add(State(value, total_energy, solc))
+                            value, sum = self.cal_value(max_flow, solc)
+                        
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))
 
             if (candidates.best_state() == (best_value, best_sum)) == False:
                 state = candidates.get(randint(0, len(candidates.x)-1))
@@ -343,7 +334,6 @@ class LocalSearch():
                 best_value = state.objective_value
                 best_sum = state.cumulative_energy_consumption
             else:
-                print('askdakdk')
                 break
             
             print("k", k)
@@ -355,8 +345,6 @@ class LocalSearch():
 
         self.best_value = best_value
         self.relays_used = len(np.where(np.array(best_sol) > 0)[0])
-        print(best_sol, sum(best_sol))
-        print(self.BSR(best_sol))
         self.energy = self.cal_energy(self.BSR(best_sol), best_sol)
         self.iter = k + 1
 
@@ -410,10 +398,9 @@ if __name__ == '__main__':
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
 
-    for i in range(1,2):
+    for i in range(1,11):
 
         file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in')]
-        file_list = ['uu-dem10_r25_1.in']
         outpaths = []
         for filename in file_list:
             outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))

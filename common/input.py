@@ -93,14 +93,12 @@ class WusnInput:
             f.write(fstr)
 
     def calculate_max_rn_conn(self):
-        max_rn_conn = {}
+        max_rn_conn = [0]*self.num_of_relays
         R = self.radius
-        BS = self.BS
 
-        for rn in self.relays:
-            max_rn_conn[rn] = 0
-            for sn in self.sensors:
-                if distance(sn, rn) <= 2*R:
+        for rn in range(self.num_of_relays):
+            for sn in range(self.num_of_sensors):
+                if distance(self.sensors[sn], self.relays[rn]) <= 2*R:
                     max_rn_conn[rn] += 1 
         self.max_rn_conn = max_rn_conn
 
