@@ -190,7 +190,7 @@ class LocalSearch():
         relays_arr = [k for k in self.inp.relays]
 
         value = -float('inf')
-        sum = 0
+        total_energy_consumption = 0
 
         activated_relays = np.where(np.array(sol) > 0)[0]
 
@@ -198,7 +198,7 @@ class LocalSearch():
             relay_idx = activated_relays[i]
             value = max([value, self.inp.static_relay_loss[relays_arr[relay_idx]] +
                         sol[relay_idx]*self.inp.dynamic_relay_loss[relays_arr[relay_idx]]])
-            sum += self.inp.static_relay_loss[relays_arr[relay_idx]] + \
+            total_energy_consumption += self.inp.static_relay_loss[relays_arr[relay_idx]] + \
                 sol[relay_idx]*self.inp.dynamic_relay_loss[relays_arr[relay_idx]]
 
         for i in range(max_flow.NumArcs()):
@@ -207,7 +207,7 @@ class LocalSearch():
                     i)-1, max_flow.Head(i)-1-self.inp.num_of_sensors
                 value = max(value, self.inp.sensor_loss[(
                     sensors_arr[tail], relays_arr[head])])
-                sum += self.inp.sensor_loss[(sensors_arr[tail], relays_arr[head])]
+                total_energy_consumption += self.inp.sensor_loss[(sensors_arr[tail], relays_arr[head])]
 
         return value
 
@@ -265,9 +265,9 @@ class LocalSearch():
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
                                 continue                            
-                            value, sum = self.cal_value(max_flow, solc)
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))
+                            value, total_energy = self.cal_value(max_flow, solc)
+                            if (value, total_energy) < candidates.worst_state():
+                                candidates.add(State(value, total_energy, solc))
 
             #move 1 connection
             for i in range(len(sol)):
@@ -280,10 +280,10 @@ class LocalSearch():
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
                                 continue                            
-                            value, sum = self.cal_value(max_flow, solc)
-
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))
+                            
+                            value, total_energy = self.cal_value(max_flow, solc)
+                            if (value, total_energy) < candidates.worst_state():
+                                candidates.add(State(value, total_energy, solc))
 
             #swap connections
             for i in range(len(sol)):
@@ -298,10 +298,10 @@ class LocalSearch():
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
                                 continue                            
-                            value, sum = self.cal_value(max_flow, solc)
-                            
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))            
+
+                            value, total_energy = self.cal_value(max_flow, solc)
+                            if (value, total_energy) < candidates.worst_state():
+                                candidates.add(State(value, total_energy, solc))   
 
             #share connections
             for i in range(len(sol)):
@@ -324,10 +324,9 @@ class LocalSearch():
                             if max_flow == -1:
                                 continue    
 
-                            value, sum = self.cal_value(max_flow, solc)
-                        
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))
+                            value, total_energy = self.cal_value(max_flow, solc)
+                            if (value, total_energy) < candidates.worst_state():
+                                candidates.add(State(value, total_energy, solc))
 
             if (candidates.best_state() == (best_value, best_sum)) == False:
                 state = candidates.get(randint(0, len(candidates.x)-1))
