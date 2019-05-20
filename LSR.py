@@ -393,9 +393,9 @@ if __name__ == '__main__':
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
 
-    for i in range(1,11):
+    for i in range(1,3):
 
-        file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in')]
+        file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in') and 'uu' in x]
         outpaths = []
         for filename in file_list:
             outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
