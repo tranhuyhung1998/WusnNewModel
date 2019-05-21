@@ -249,7 +249,6 @@ class LocalSearch():
                 for j in range(len(sol)):
                     if i != j:
                         solc = copy(best_sol)
-
                         if self.max_rn_conn[i] <= solc[i] + solc[j]:
                             solc[i] = solc[i] + solc[j]
                             solc[j] = 0
@@ -263,40 +262,6 @@ class LocalSearch():
                             value, sum = self.cal_value(max_flow, solc)
                             if (value, sum) < candidates.worst_state():
                                 candidates.add(State(value, sum, solc))
-
-            #move 1 connection
-            for i in range(len(sol)):
-                for j in range(len(sol)):
-                    if i != j:
-                        solc = copy(best_sol)
-                        solc[i], solc[j] = solc[i]+1, solc[j]-1
-
-                        if self.if_valid(solc, candidates.worst_state()[0]):
-                            max_flow = self.BSR(solc)
-                            if max_flow == -1:
-                                continue                            
-                            value, sum = self.cal_value(max_flow, solc)
-
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))
-
-            #swap connections
-            for i in range(len(sol)):
-                for j in range(len(sol)):
-                    if i < j:
-                        solc = copy(best_sol)
-                        if solc[i] == solc[j]:
-                            continue
-                        solc[i], solc[j] = solc[j], solc[i]
-
-                        if self.if_valid(solc, candidates.worst_state()[0]):
-                            max_flow = self.BSR(solc)
-                            if max_flow == -1:
-                                continue                            
-                            value, sum = self.cal_value(max_flow, solc)
-                            
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))            
 
             #share connections
             for i in range(len(sol)):
@@ -323,7 +288,41 @@ class LocalSearch():
                         
                             if (value, sum) < candidates.worst_state():
                                 candidates.add(State(value, sum, solc))
+            
+            #swap connections
+            for i in range(len(sol)):
+                for j in range(len(sol)):                
+                    if i < j:
+                        solc = copy(best_sol)
+                        if solc[i] == solc[j]:
+                            continue
+                        solc[i], solc[j] = solc[j], solc[i]
 
+                        if self.if_valid(solc, candidates.worst_state()[0]):
+                            max_flow = self.BSR(solc)
+                            if max_flow == -1:
+                                continue                            
+                            value, sum = self.cal_value(max_flow, solc)
+                            
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))
+        
+            #move 1 connection
+            for i in range(len(sol)):
+                for j in range(len(sol)):
+                    if i != j:
+                        solc = copy(best_sol)
+                        solc[i], solc[j] = solc[i]+1, solc[j]-1
+
+                        if self.if_valid(solc, candidates.worst_state()[0]):
+                            max_flow = self.BSR(solc)
+                            if max_flow == -1:
+                                continue                            
+                            value, sum = self.cal_value(max_flow, solc)
+
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))            
+                                
             if (candidates.best_state() == (best_value, best_sum)) == False:
                 state = candidates.get(randint(0, len(candidates.x)-1))
 
@@ -393,9 +392,9 @@ if __name__ == '__main__':
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
 
-    for i in range(1,3):
+    for i in range(1,11):
 
-        file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in') and 'uu' in x]
+        file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in')]
         outpaths = []
         for filename in file_list:
             outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
