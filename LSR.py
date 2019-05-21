@@ -61,12 +61,15 @@ class LocalSearch():
         self.random_initial_state = random_initial_state
         self.candidate_size = candidate_size
         self.max_rn_conn = self.inp.max_rn_conn
+        self.lz = importlib.reload(logzero)
+        self.filename = input_path.split('/')[-1]
 
         self.success = True
         self.best_value = None
         self.energy = None
         self.iter = None
         self.relays_used = None
+
 
     def initial_state(self):
         sol = []
@@ -227,20 +230,23 @@ class LocalSearch():
                 return False
         return True
 
+    def log(self, msg, level=logging.INFO):
+        self.lz.logger.log(level, '[%s] %s' % (self.filename, msg))
 
     def search(self):
         if self.isSolvable() == False:
             return False
 
         candidates = FixedSizeOrderedStates(size=self.candidate_size)
-        
+        self.log('Initializing')        
         sol, max_flow = self.initial_state()
         if self.success == False:
             return None
 
         best_value, best_sum = self.cal_value(max_flow, sol)
         best_sol = sol
-        
+
+        self.log('Searching')        
         k = 0
         for k in range(self.max_iteration):
             candidates.add(State(best_value, best_sum, sol))
@@ -352,7 +358,6 @@ def solve(filename, outpath):
         log('Exists')
         return None
     try: 
-        log('Solving')
         ls = LocalSearch(os.path.join("data",args_.indir,str(filename)), alpha = args_.alpha, random_initial_state = args_.init)
         ls.search()
 
