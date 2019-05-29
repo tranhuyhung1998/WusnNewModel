@@ -152,7 +152,7 @@ def parse_arguments():
 
 if __name__ == '__main__':
     args_ = parse_arguments()
-    args_.input = [x for x  in args_.input if (('uu' in x and 'dem2' in x) or 'uu' not in x)  and '50' not in x]
+    args_.input = [x for x  in args_.input if 'r25' in x and 'uu' not in x]
 
     os.makedirs(args_.outdir, exist_ok=True)
     logger.info('Loading input files')
