@@ -398,8 +398,8 @@ if __name__ == '__main__':
         os.mkdir(dirpath)
 
     for i in range(1,11):
-
-        file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in')]
+        file_list = [x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in') and 'r50' not in x]
+        
         outpaths = []
         for filename in file_list:
             outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
