@@ -390,9 +390,9 @@ if __name__ == '__main__':
 
     dirpath = ""
     if args_.init == 1:
-        dirpath = os.path.join('data', args_.indir, 'random_init_results')
+        dirpath = os.path.join('data', args_.indir, 'random_init_results' + str(args_.alpha))
     else:
-        dirpath = os.path.join('data', args_.indir, 'flow_init_results')
+        dirpath = os.path.join('data', args_.indir, 'flow_init_results' + str(args_.alpha))
 
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
@@ -403,6 +403,8 @@ if __name__ == '__main__':
 
         file_list = list(file_list)
 
+        file_list = [tmp for tmp in file_list if 'uu' in tmp and 'r25' in tmp]
+        print(file_list)
         outpaths = []
         for filename in file_list:
             outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
