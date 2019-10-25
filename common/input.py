@@ -92,28 +92,13 @@ class WusnInput:
             fstr = json.dumps(d, indent=4)
             f.write(fstr)
 
-    def create_cache(self):
-        loss_file_name = str(hash(self)) + ".loss"
-        list_loss_file = os.listdir("cache")
-        if loss_file_name in list_loss_file:
-            print("Cache exist")
-        else:
-            print("Creating cache")
-            f = open("cache/" + loss_file_name, "wb")
-            self.calculate_loss()
-            data = [self.relay_loss, self.sensor_loss]
-            pickle.dump(data, f)
-            f.close()
-
     def calculate_max_rn_conn(self):
-        max_rn_conn = {}
+        max_rn_conn = [0]*self.num_of_relays
         R = self.radius
-        BS = self.BS
 
-        for rn in self.relays:
-            max_rn_conn[rn] = 0
-            for sn in self.sensors:
-                if distance(sn, rn) <= 2*R:
+        for rn in range(self.num_of_relays):
+            for sn in range(self.num_of_sensors):
+                if distance(self.sensors[sn], self.relays[rn]) <= 2*R:
                     max_rn_conn[rn] += 1 
         self.max_rn_conn = max_rn_conn
 

@@ -3,13 +3,19 @@ import time
 from ortools.graph import pywrapgraph
 from common.input import WusnInput
 from copy import copy, deepcopy
-from random import randint
+from random import randint, choice
 from common.point import distance
 import numpy as np
 import math
 from common.output import WusnOutput
 from argparse import ArgumentParser
 from copy import copy 
+import joblib
+import importlib
+
+import logging
+import logzero
+from logzero import logger
 
 class State():
     def __init__(self, objective_value, cumulative_energy_consumption, solution):
@@ -54,13 +60,16 @@ class LocalSearch():
         self.max_iteration = max_iteration
         self.random_initial_state = random_initial_state
         self.candidate_size = candidate_size
-        self.max_rn_conn = [self.inp.max_rn_conn[k] for k in self.inp.max_rn_conn]
+        self.max_rn_conn = self.inp.max_rn_conn
+        self.lz = importlib.reload(logzero)
+        self.filename = input_path.split('/')[-1]
 
         self.success = True
         self.best_value = None
         self.energy = None
         self.iter = None
         self.relays_used = None
+
 
     def initial_state(self):
         sol = []
@@ -73,34 +82,28 @@ class LocalSearch():
                 if max_flow.Head(i) == self.inp.num_of_relays + self.inp.num_of_sensors + 1:
                     sol.append(max_flow.Flow(i))
         else:
-            counter = 0
+            sensors_arr = [k for k in self.inp.sensors]
+            relays_arr = [k for k in self.inp.relays]
 
-            while True:
-                counter += 1
-                if counter > 10000:
-                    self.success = False
-                    return None, None
+            N, M = self.inp.num_of_sensors, self.inp.num_of_relays
+            
+            sol = [0]*M
 
-                sol = copy(self.max_rn_conn)
-                reduce_quantity = sum(sol) - self.inp.num_of_sensors
+            for i in range(N):
+                reachable_relays = []
+                for j in range(M):
+                    if distance(sensors_arr[i], relays_arr[j]) <= 2*self.inp.radius:
+                        reachable_relays.append(j)
+                sol[choice(reachable_relays)] += 1
 
-                while reduce_quantity != 0:
-                    index = randint(0, self.inp.num_of_sensors - 1)
-                    quant = randint(0, min(reduce_quantity, sol[index]))
-                    sol[index] -= quant
-                    reduce_quantity -= quant
-
-                max_flow = self.BSR(sol)
-                if max_flow == -1:
-                    continue
-                break
+            max_flow = self.solve_max_flow(sol, self.inp.radius)
 
         return sol, max_flow
 
     def if_valid(self, sol, best_value):
         value = -float('inf')
         
-        sensors_arr = [k for k in self.inp.sensors]
+        # sensors_arr = [k for k in self.inp.sensors]
         relays_arr = [k for k in self.inp.relays]
 
         activated_relays = np.where(np.array(sol) > 0)[0]
@@ -227,20 +230,23 @@ class LocalSearch():
                 return False
         return True
 
+    def log(self, msg, level=logging.INFO):
+        self.lz.logger.log(level, '[%s] %s' % (self.filename, msg))
 
     def search(self):
         if self.isSolvable() == False:
             return False
 
         candidates = FixedSizeOrderedStates(size=self.candidate_size)
-        
+        self.log('Initializing')        
         sol, max_flow = self.initial_state()
         if self.success == False:
             return None
 
         best_value, best_sum = self.cal_value(max_flow, sol)
         best_sol = sol
-        
+
+        self.log('Searching')        
         k = 0
         for k in range(self.max_iteration):
             candidates.add(State(best_value, best_sum, sol))
@@ -249,7 +255,6 @@ class LocalSearch():
                 for j in range(len(sol)):
                     if i != j:
                         solc = copy(best_sol)
-
                         if self.max_rn_conn[i] <= solc[i] + solc[j]:
                             solc[i] = solc[i] + solc[j]
                             solc[j] = 0
@@ -263,40 +268,6 @@ class LocalSearch():
                             value, sum = self.cal_value(max_flow, solc)
                             if (value, sum) < candidates.worst_state():
                                 candidates.add(State(value, sum, solc))
-
-            #move 1 connection
-            for i in range(len(sol)):
-                for j in range(len(sol)):
-                    if i != j:
-                        solc = copy(best_sol)
-                        solc[i], solc[j] = solc[i]+1, solc[j]-1
-
-                        if self.if_valid(solc, candidates.worst_state()[0]):
-                            max_flow = self.BSR(solc)
-                            if max_flow == -1:
-                                continue                            
-                            value, sum = self.cal_value(max_flow, solc)
-
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))
-
-            #swap connections
-            for i in range(len(sol)):
-                for j in range(len(sol)):
-                    if i < j:
-                        solc = copy(best_sol)
-                        if solc[i] == solc[j]:
-                            continue
-                        solc[i], solc[j] = solc[j], solc[i]
-
-                        if self.if_valid(solc, candidates.worst_state()[0]):
-                            max_flow = self.BSR(solc)
-                            if max_flow == -1:
-                                continue                            
-                            value, sum = self.cal_value(max_flow, solc)
-                            
-                            if (value, sum) < candidates.worst_state():
-                                candidates.add(State(value, sum, solc))            
 
             #share connections
             for i in range(len(sol)):
@@ -317,10 +288,47 @@ class LocalSearch():
                         if self.if_valid(solc, candidates.worst_state()[0]):
                             max_flow = self.BSR(solc)
                             if max_flow == -1:
-                                continue                            
+                                continue    
+
+                            value, sum = self.cal_value(max_flow, solc)
+                        
                             if (value, sum) < candidates.worst_state():
                                 candidates.add(State(value, sum, solc))
+            
+            #swap connections
+            for i in range(len(sol)):
+                for j in range(len(sol)):                
+                    if i < j:
+                        solc = copy(best_sol)
+                        if solc[i] == solc[j]:
+                            continue
+                        solc[i], solc[j] = solc[j], solc[i]
 
+                        if self.if_valid(solc, candidates.worst_state()[0]):
+                            max_flow = self.BSR(solc)
+                            if max_flow == -1:
+                                continue                            
+                            value, sum = self.cal_value(max_flow, solc)
+                            
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))
+        
+            #move 1 connection
+            for i in range(len(sol)):
+                for j in range(len(sol)):
+                    if i != j:
+                        solc = copy(best_sol)
+                        solc[i], solc[j] = solc[i]+1, solc[j]-1
+
+                        if self.if_valid(solc, candidates.worst_state()[0]):
+                            max_flow = self.BSR(solc)
+                            if max_flow == -1:
+                                continue                            
+                            value, sum = self.cal_value(max_flow, solc)
+
+                            if (value, sum) < candidates.worst_state():
+                                candidates.add(State(value, sum, solc))            
+                                
             if (candidates.best_state() == (best_value, best_sum)) == False:
                 state = candidates.get(randint(0, len(candidates.x)-1))
 
@@ -332,7 +340,7 @@ class LocalSearch():
                 best_sum = state.cumulative_energy_consumption
             else:
                 break
-                
+            
             candidates.clear()
 
         self.best_value = best_value
@@ -340,17 +348,41 @@ class LocalSearch():
         self.energy = self.cal_energy(self.BSR(best_sol), best_sol)
         self.iter = k + 1
 
+def solve(filename, outpath):
+    lz = importlib.reload(logzero)
+
+    def log(msg, level=logging.INFO):
+        lz.logger.log(level, '[%s] %s' % (filename, msg))
+
+    if os.path.exists(outpath):
+        log('Exists')
+        return None
+    try: 
+        ls = LocalSearch(os.path.join("data",args_.indir,str(filename)), alpha = args_.alpha, random_initial_state = args_.init)
+        ls.search()
+
+        best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
+        log('Saving')
+        with open(outpath, 'w+') as f:
+            f.write('{} {} {} {} {} {}\n'.format(filename, best_value, relays_used, energy, ls.inp.e_max, iter))
+
+    except Exception as e:
+        log('Weird things happened')
+        raise e
+
 def parse_arguments():
     parser = ArgumentParser()
 
     parser.add_argument('--alpha', type=float, default=0.5,
                         help='Alpha coefficient')
-    # parser.add_argument('--outdir', type=str, default='data/small_data/LS')
     parser.add_argument('--indir', type=str, default='small_data')
     parser.add_argument('--init', type=int, default=0, help='random initialization flags')
+    parser.add_argument('-p', '--procs', type=int, default=4, help='Number of processes to fork')
+
     return parser.parse_args()
 
-
+# uu-dem10_r25_1.in 
+# uu-dem10_r25_1.in
 if __name__ == '__main__':
     if "small_data_result.txt" in os.listdir("."):
         os.remove("small_data_result.txt")
@@ -358,35 +390,26 @@ if __name__ == '__main__':
 
     dirpath = ""
     if args_.init == 1:
-        dirpath = os.path.join('data', args_.indir, 'random_init_results')
+        dirpath = os.path.join('data', args_.indir, 'random_init_results' + str(args_.alpha))
     else:
-        dirpath = os.path.join('data', args_.indir, 'flow_init_results')
+        dirpath = os.path.join('data', args_.indir, 'flow_init_results' + str(args_.alpha))
 
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
 
-    for i in range(1,21):
-        print("{} Times".format(i))
-        outpath = os.path.join(dirpath, 'LS{}'.format(i))
+    for i in range(1,11):
+        file_list = set([x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in') and 'r50' not in x and x.startswith('uu')]) \
+            | set([x for x in os.listdir(os.path.join('data', args_.indir)) if x.endswith('.in') and 'r25' in x])
 
-        if os.path.exists(outpath):
-            continue
+        file_list = list(file_list)
 
-        file_list = os.listdir(os.path.join('data', args_.indir))
+        file_list = [tmp for tmp in file_list if 'uu' in tmp and 'r25' in tmp]
+        print(file_list)
+        outpaths = []
+        for filename in file_list:
+            outpaths.append(os.path.join(dirpath, '{}_{}.out'.format(filename.split('.')[0], i)))
 
-        for file_name in file_list:
-            if not file_name.endswith('.in'):
-                continue
 
-            outpath = os.path.join(dirpath, '{}_{}.out'.format(file_name.split('.')[0], i))
-            if os.path.exists(outpath):
-                continue
-            print(file_name)
-            ls = LocalSearch(os.path.join("data",args_.indir,str(file_name)), alpha = args_.alpha, random_initial_state = args_.init)
-
-            ls.search()
-
-            best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
-
-            with open(outpath, 'w+') as f:
-                f.write('{} {} {} {} {} {}\n'.format(file_name, best_value, relays_used, energy, ls.inp.e_max, iter))
+        joblib.Parallel(n_jobs=args_.procs)(
+                joblib.delayed(solve)(filename, outpath) for filename, outpath in zip(file_list, outpaths)
+            )

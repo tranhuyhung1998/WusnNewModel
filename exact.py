@@ -152,16 +152,22 @@ def parse_arguments():
 
 if __name__ == '__main__':
     args_ = parse_arguments()
-    os.makedirs(args_.outdir, exist_ok=True)
+    args_.input = [x for x  in args_.input if 'r25' in x and 'uu' not in x]
 
+    os.makedirs(args_.outdir, exist_ok=True)
     logger.info('Loading input files')
     save_paths = args_.input
     save_paths = map(lambda x: os.path.split(x)[-1].split('.')[0], save_paths)
     save_paths = map(lambda x: os.path.join(args_.outdir, x), save_paths)
     save_paths = map(lambda x: x + '.out' + str(args_.iteration), save_paths)
-    save_paths = [x for x in list(save_paths) if 'uu' not in x]
+    save_paths = [x for x in list(save_paths)]
 
-    inputs = list(map(lambda x: WusnInput.from_file(x), args_.input))
+    inputs = [WusnInput.from_file(x) for x in args_.input]
+    for i,j in zip([x for x in args_.input], save_paths):
+        if i.split('/')[-1].split('.')[0] in j == False:
+            print(i,j)
+    
+    print(len(save_paths), len(inputs))
 
     logger.info('Solving %d problems' % len(inputs))
     if args_.lax:
