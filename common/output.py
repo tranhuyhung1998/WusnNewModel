@@ -66,6 +66,17 @@ class WusnOutput:
 
         return l1 + l2
     
+    def max_consumption(self):
+        ur = self.used_relays
+        l2 = -float('inf')
+        for rn in ur:
+            conns = list(filter(lambda x: x == rn, self.mapping.values()))
+            ls = WusnConstants.k_bit * (len(conns) * (WusnConstants.e_rx + WusnConstants.e_da) +
+                                        WusnConstants.e_mp * (distance(rn, self.inp.BS) ** 4))
+            if ls > l2:
+                l2 = ls
+        return l2
+    
     def total_tranmission_loss(self):
         total = 0
         ur = self.used_relays

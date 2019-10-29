@@ -11,9 +11,10 @@ from .heuristic import *
 
 GEN = 100
 CP = 0.8
-MP = 0.05
-NUM_OF_INDIVIDUALS = 500
-TERMINATE = 50
+MP = 0.1
+NUM_OF_INDIVIDUALS = 100
+TERMINATE = 30
+alpha = 0.5
 
 def random_init_individual(num_relay):
     "Initial individual with any num of relay"
@@ -54,16 +55,34 @@ def mutate(original):
     while fake[id1] == 0:
         count1 += 1
         id1 = random.randint(0, ll-1)
-        if count1 >= 10:
+        if count1 >= 2*ll:
             break
     id2 = random.randint(0, ll-1)
     while fake[id2] == 1:
         count2 += 1
         id2 = random.randint(0, ll-1)
-        if count2 >= 10:
+        if count2 >= 2*ll:
             break
     fake[id1], fake[id2] = fake[id2], fake[id1]
     return fake
+
+def normalize_loss(indi):
+    if indi[1].loss(alpha) < 0:
+        return float("inf")
+    else:
+        return 10000*indi[1].loss(alpha) + indi[1].total_tranmission_loss()
+
+# def sort(individuals):
+#     ll = len(individuals)
+#     new_indis = individuals[:]
+#     for i in range(len(individuals)):
+#         for j in range(i+1, len(individuals)):
+#             if new_indis[i][1].loss(alpha) > new_indis[j][1].loss(alpha):
+#                 new_indis[i], new_indis[j] = new_indis[j], new_indis[i]
+#             elif new_indis[i][1].loss(alpha) == new_indis[j][1].loss(alpha):
+#                 if new_indis[i][1].total_tranmission_loss() > new_indis[j][1].total_tranmission_loss():
+#                     new_indis[i], new_indis[j] = new_indis[j], new_indis[i]
+#     return new_indis
 
 def GA(inp: WusnInput) -> int:
     # Khoi tao quan the
@@ -72,24 +91,18 @@ def GA(inp: WusnInput) -> int:
     # Cac ca the da duoc tinh toan
     calculated = {}
 
-    max_value = -float("inf")
-    max_num_relay = -float("inf")
-
     for i in range (0, NUM_OF_INDIVIDUALS):
         indi = random_init_individual(inp.num_of_relays)
-        config, value, final_num_relay = heuristic(inp, indi)
-        if value > max_value and value != 9999:
-            max_value = value
-        if final_num_relay > max_num_relay and final_num_relay!= 9999:
-            max_num_relay = final_num_relay
-        calculated[str(indi)] = [config, value, final_num_relay]
-        individuals.append([indi, config, value, final_num_relay])
+        out = heuristic(inp, indi)
+        
+        calculated[str(indi)] = out
+        individuals.append([indi, out])
 
     print(individuals[0])
     
     count_stable = 0
-    max_c = individuals[0][2]
-    prev_max = individuals[0][2]
+    max_c = individuals[0][1].loss(alpha)
+    prev_max = individuals[0][1].loss(alpha)
 
     # Iterate through generations
     for it in range(0, GEN):
@@ -107,77 +120,67 @@ def GA(inp: WusnInput) -> int:
                 son, daughter = cross(individuals[id1][0], individuals[id2][0])
 
                 if str(son) in calculated:
-                    config1 = calculated[str(son)][0]
-                    cost1 = calculated[str(son)][1]
-                    final_num_relay1 = calculated[str(son)][2]
+                    out1 = calculated[str(son)]
                 else:
                     s = time.time()
-                    config1, cost1, final_num_relay1 = heuristic(inp, son)
+                    out1 = heuristic(inp, son)
                     t = time.time()
                     
                 if str(daughter) in calculated:
-                    config2 = calculated[str(daughter)][0]
-                    cost2 = calculated[str(daughter)][1]
-                    final_num_relay2 = calculated[str(daughter)][2]
+                    out2 = calculated[str(daughter)]
                 else:
-                    s = time.time()
-                    config2, cost2, final_num_relay2 = heuristic(inp, daughter)
-                    t = time.time()
+                    # s = time.time()
+                    out2 = heuristic(inp, daughter)
+                    # t = time.time()
 
-                if cost1 > max_value and cost1 != 9999:
-                    max_value = cost1
-                if cost2 > max_value and cost2 != 9999:
-                    max_value = cost2
-                if final_num_relay1 > max_value and final_num_relay1 != 9999:
-                    max_num_relay = final_num_relay1
-                if final_num_relay2 > max_value and final_num_relay2 != 9999:
-                    max_num_relay = final_num_relay2
-
-                if config1 == None:
+                if out1.mapping == {}:
                     none += 1
                 else: 
                     not_none += 1
-                if config2 == None:
+                if out2.mapping == {}:
                     none += 1
                 else:
                     not_none += 1
 
-                # config1, cost1 = tabu_search(inp, son)
-                # config2, cost2 = tabu_search(inp, daughter)
-                individuals.append([son, config1, cost1, final_num_relay1])
-                individuals.append([daughter, config2, cost2, final_num_relay2])
+                individuals.append([son, out1])
+                individuals.append([daughter, out2])
+
                 xx2 = random.random()
                 if xx2 < MP:
                     grand_child1 = mutate(son)
                     grand_child2 = mutate(daughter)
-                    m_config1, m_cost1, m_final_num_relay1 = heuristic(inp, grand_child1)
-                    m_config2, m_cost2, m_final_num_relay2 = heuristic(inp, grand_child2)
-                    if m_cost1 > max_value and m_cost1 != 9999:
-                        max_value = m_cost1
-                    if m_cost2 > max_value and m_cost2 != 9999:
-                        max_value = m_cost2
-                    if m_final_num_relay1 > max_value and m_final_num_relay1 != 9999:
-                        max_num_relay = m_final_num_relay1
-                    if m_final_num_relay2 > max_value and m_final_num_relay2 != 9999:
-                        max_num_relay = m_final_num_relay2
-                    individuals.append([grand_child1, m_config1, m_cost1, m_final_num_relay1])
-                    individuals.append([grand_child2, m_config2, m_cost2, m_final_num_relay2])
-        print(max_value)
-        individuals2 = sorted(individuals, key=lambda x: (x[2]/max_value + x[3]/max_num_relay))
-        individuals = individuals2[:NUM_OF_INDIVIDUALS]
-        if individuals[0][2] < max_c:
-            max_c = individuals[0][2]
-        if individuals[0][2] == prev_max:
+                    m_out1 = heuristic(inp, grand_child1)
+                    m_out2 = heuristic(inp, grand_child2)
+
+                    if m_out1.mapping == {}:
+                        none += 1
+                    else:
+                        not_none += 1
+                    if m_out2.mapping == {}:
+                        none += 1
+                    else: 
+                        not_none += 1
+
+                    individuals.append([grand_child1, m_out1])
+                    individuals.append([grand_child2, m_out2])
+
+        individuals2 = sorted(individuals, key=normalize_loss)
+        # individuals2 = sort(individuals)
+        individuals = individuals2[:NUM_OF_INDIVIDUALS-1] 
+        individuals.append(individuals2[-1])
+        if individuals[0][1].loss(alpha) < max_c:
+            max_c = individuals[0][1].loss(alpha)
+        if individuals[0][1].loss(alpha) == prev_max:
             count_stable += 1
         else:
             count_stable = 0
         if count_stable == TERMINATE:
             print("TERMINATE")
             break
-        prev_max = individuals[0][2]
+        prev_max = individuals[0][1].loss(alpha)
         end = time.time()
         print("none: %d, not_none: %d" % (none, not_none))
-        print("Gen: %d, time: %fs, min: %f %f" % (it, end - start, individuals[0][2]/max_value+individuals[0][3]/max_num_relay, individuals[NUM_OF_INDIVIDUALS-1][2]/max_value+individuals[NUM_OF_INDIVIDUALS-1][3]/max_num_relay))
+        print("Gen: %d, time: %fs, min: %f %f %f" % (it, end - start, len(individuals[0][1].used_relays), individuals[0][1].loss(alpha), individuals[NUM_OF_INDIVIDUALS-1][1].loss(alpha)))
     # print(max_c)
     return individuals[0]
 
