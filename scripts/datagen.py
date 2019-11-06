@@ -82,16 +82,27 @@ if __name__ == '__main__':
             for i in range(args.count):
                 fname = '%s%s_r%d_%d.in' % (args.prefix, dname, r, i+1)
                 fpath = os.path.join(args.output, fname)
+                if os.path.exists(fpath):
+                    continue
                 logger.info('Generating %s' % fpath)
 
-                center_x, center_y = 0, 0
+                # generate random bs
+                center_x, center_y = np.random.uniform(args.W/5, args.W - args.W/5), np.random.uniform(args.W/5, args.W - args.W/5)
+                center_z = estimate(center_x, center_y, dem)
+                bs = Point(center_x, center_y, center_z)
+
                 # Generate random relays
                 relays = []
+
                 for j in range(args.nr):
-                    rn = point(dem, (0, args.W), (0, args.H), z_off=args.height, cls=RelayNode, distribution=args.distribution)
+                    rn = None
+                    while True:
+                        rn = point(dem, (0, args.W), (0, args.H), z_off=args.height, cls=RelayNode, distribution=args.distribution)
+                        if distance(rn, bs) <= 2 * r:
+                            break
+
                     relays.append(rn)
-                    center_x += rn.x
-                    center_y += rn.y
+
                 # Generate random sensors
                 sensors = []
                 for j in range(args.ns):
@@ -100,13 +111,6 @@ if __name__ == '__main__':
                         sn = point(dem, (0, args.W), (0, args.H), z_off=-args.depth, cls=SensorNode, distribution=args.distribution)
                         ok = is_covered(sn, relays, r)
                     sensors.append(sn)
-                    center_x += sn.x
-                    center_y += sn.y
-
-                center_x /= (args.nr + args.ns)
-                center_y /= (args.nr + args.ns)
-                center_z = estimate(center_x, center_y, dem)
-                bs = Point(center_x, center_y, center_z)
 
                 res = WusnInput(_W=args.W, _H=args.H, _depth=args.depth,
                                 _height=args.height, _num_of_relays=args.nr,
@@ -114,10 +118,5 @@ if __name__ == '__main__':
                                 _sensors=sensors, _BS=bs, _radius=r)
 
                 res.to_file(fpath)
-        #         break
-        #     break
-        # break
-                # print(args.W, args.H)
-
-
+                
     logger.info('Done')
