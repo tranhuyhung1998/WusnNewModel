@@ -100,7 +100,8 @@ if __name__ == '__main__':
                         rn = point(dem, (0, args.W), (0, args.H), z_off=args.height, cls=RelayNode, distribution=args.distribution)
                         if distance(rn, bs) <= 2 * r:
                             break
-
+                    if distance(rn, bs) > 2*r:
+                        logger.warning(f'{r} {distance(rn, bs)}')
                     relays.append(rn)
 
                 # Generate random sensors
