@@ -114,7 +114,7 @@ class WusnInput:
         return max(vals)
 
     def calculate_loss(self):
-        sensor_loss = defaultdict(lambda: float('inf'))
+        sensor_loss = {}#defaultdict(lambda: float('inf'))
         static_relay_loss = {}
         dynamic_relay_loss = {}
         R = self.radius
@@ -124,6 +124,8 @@ class WusnInput:
                 if distance(sn, rn) <= 2 * R:
                     sensor_loss[(sn, rn)] = WusnConstants.k_bit * (
                             WusnConstants.e_tx + WusnConstants.e_fs * math.pow(distance(sn, rn), 2))
+                else:
+                    sensor_loss[(sn, rn)] = float('inf')
 
         for rn in self.relays:
             dynamic_relay_loss[rn] = WusnConstants.k_bit * (WusnConstants.e_rx + WusnConstants.e_da)
