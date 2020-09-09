@@ -406,7 +406,6 @@ if __name__ == '__main__':
 
         file_list = list(file_list)
 
-        file_list = [tmp for tmp in file_list if 'uu' in tmp and 'r25' in tmp]
         print(file_list)
         outpaths = []
         for filename in file_list:
