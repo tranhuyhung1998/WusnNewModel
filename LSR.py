@@ -249,6 +249,7 @@ class LocalSearch():
         self.log('Searching')        
         k = 0
         for k in range(self.max_iteration):
+            print(k)
             candidates.add(State(best_value, best_sum, sol))
             #move
             for i in range(len(sol)):
@@ -358,13 +359,16 @@ def solve(filename, outpath):
         log('Exists')
         return None
     try: 
+        start = time.time()
+
         ls = LocalSearch(os.path.join("data",args_.indir,str(filename)), alpha = args_.alpha, random_initial_state = args_.init)
         ls.search()
 
         best_value, relays_used, energy, iter = ls.best_value, ls.relays_used, ls.energy, ls.iter
         log('Saving')
+        end = time.time()
         with open(outpath, 'w+') as f:
-            f.write('{} {} {} {} {} {}\n'.format(filename, best_value, relays_used, energy, ls.inp.e_max, iter))
+            f.write('{} {} {} {} {} {} {}\n'.format(filename, best_value, relays_used, energy, ls.inp.e_max, iter, end-start))
 
     except Exception as e:
         log('Weird things happened')

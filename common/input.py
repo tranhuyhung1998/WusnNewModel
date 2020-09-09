@@ -39,6 +39,7 @@ class WusnInput:
         self.dynamic_relay_loss = dynamic_relay_loss
         self.sensor_loss = sensor_loss
         self.max_rn_conn = max_rn_conn
+        self.e_max = 0
 
         if None in (static_relay_loss, dynamic_relay_loss, sensor_loss):
             self.calculate_loss()
@@ -102,16 +103,17 @@ class WusnInput:
                     max_rn_conn[rn] += 1 
         self.max_rn_conn = max_rn_conn
 
-    @property
-    def e_max(self):
-        vals = []
-        vals.extend(self.sensor_loss.values())
-        max_rloss = []
-        for rn in self.relays:
-            max_rloss.append(WusnConstants.k_bit * (self.num_of_sensors * (WusnConstants.e_rx + WusnConstants.e_da) +
-                                                    WusnConstants.e_mp * (distance(rn, self.BS) ** 4)))
-        vals.extend(max_rloss)
-        return max(vals)
+    # @property
+    # def e_max(self):
+    #     vals = []
+    #     vals.extend(self.sensor_loss.values())
+    #     max_rloss = []
+    #     for rn in self.relays:
+    #         max_rloss.append(WusnConstants.k_bit * (self.num_of_sensors * (WusnConstants.e_rx + WusnConstants.e_da) +
+    #                                                 WusnConstants.e_mp * (distance(rn, self.BS) ** 4)))
+    #     vals.extend(max_rloss)
+    #     # print(vals)
+    #     return max(vals)
 
     def calculate_loss(self):
         sensor_loss = {}#defaultdict(lambda: float('inf'))
@@ -119,21 +121,25 @@ class WusnInput:
         dynamic_relay_loss = {}
         R = self.radius
         BS = self.BS
+        self.e_max = 0
         for sn in self.sensors:
             for rn in self.relays:
                 if distance(sn, rn) <= 2 * R:
                     sensor_loss[(sn, rn)] = WusnConstants.k_bit * (
                             WusnConstants.e_tx + WusnConstants.e_fs * math.pow(distance(sn, rn), 2))
+                    self.e_max = max(self.e_max, sensor_loss[(sn, rn)])
                 else:
                     sensor_loss[(sn, rn)] = float('inf')
 
         for rn in self.relays:
             dynamic_relay_loss[rn] = WusnConstants.k_bit * (WusnConstants.e_rx + WusnConstants.e_da)
             static_relay_loss[rn] = WusnConstants.k_bit * WusnConstants.e_mp * math.pow(distance(rn, BS), 4)
+            self.e_max = max(self.e_max, self.num_of_sensors*dynamic_relay_loss[rn] + static_relay_loss[rn])
+
 
         self.static_relay_loss = static_relay_loss
         self.dynamic_relay_loss = dynamic_relay_loss
-        self.sensor_loss = sensor_loss
+        self.sensor_loss = sensor_loss        
 
     def __hash__(self):
         return hash((self.W, self.H, self.depth, self.height, self.num_of_relays, self.num_of_sensors, self.radius,
