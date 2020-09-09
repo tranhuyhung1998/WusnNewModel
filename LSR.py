@@ -249,7 +249,6 @@ class LocalSearch():
         self.log('Searching')        
         k = 0
         for k in range(self.max_iteration):
-            print(k)
             candidates.add(State(best_value, best_sum, sol))
             #move
             for i in range(len(sol)):
