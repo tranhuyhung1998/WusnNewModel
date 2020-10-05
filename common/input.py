@@ -129,7 +129,7 @@ class WusnInput:
                             WusnConstants.e_tx + WusnConstants.e_fs * math.pow(distance(sn, rn), 2))
                     self.e_max = max(self.e_max, sensor_loss[(sn, rn)])
                 else:
-                    sensor_loss[(sn, rn)] = float('inf')
+                    sensor_loss[(sn, rn)] = 1e8 # float('inf')
 
         for rn in self.relays:
             dynamic_relay_loss[rn] = WusnConstants.k_bit * (WusnConstants.e_rx + WusnConstants.e_da)

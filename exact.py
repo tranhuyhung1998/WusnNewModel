@@ -45,6 +45,7 @@ def model_lp(inp: WusnInput, alpha=0.5, lax=False):
     Er = np.asarray(Er, dtype=object)
 
     # Constraints
+
     for j in range(m):
         asum = pulp.lpSum(A[:, j])
         prob += (Er[j] == (WusnConstants.k_bit * (asum * (E_Rx + E_Da)) +
@@ -52,14 +53,19 @@ def model_lp(inp: WusnInput, alpha=0.5, lax=False):
         prob += ((asum - Z[j] * n) <= 0)
         prob += (asum >= Z[j])
         prob += (Ex >= Er[j])
+    
     for i in range(n):
         prob += (pulp.lpSum(A[i]) == 1)
+
     for i in range(n):
         for j in range(m):
             prob += (A[i, j] <= C[i, j])
             prob += (Ex >= A[i, j] * SL[i, j])
 
-    Cx = alpha / m * pulp.lpSum(Z) + (1 - alpha) / Emax * Ex
+    prob += (pulp.lpSum(Z) <= 14)
+
+    # Cx = alpha / m * pulp.lpSum(Z) + (1 - alpha) / Emax * Ex
+    Cx = Ex
     prob.setObjective(Cx)
 
     return prob
@@ -152,8 +158,8 @@ def parse_arguments():
 
 if __name__ == '__main__':
     args_ = parse_arguments()
-    args_.input = [x for x  in args_.input if 'r25' in x and 'uu' not in x]
-
+    args_.input = [x for x  in args_.input if 'r25' in x] + [x for x  in args_.input if 'r50' in x and 'uu' in x]
+    print('asdoasdolasdll')
     os.makedirs(args_.outdir, exist_ok=True)
     logger.info('Loading input files')
     save_paths = args_.input
@@ -163,11 +169,10 @@ if __name__ == '__main__':
     save_paths = [x for x in list(save_paths)]
 
     inputs = [WusnInput.from_file(x) for x in args_.input]
+    
     for i,j in zip([x for x in args_.input], save_paths):
         if i.split('/')[-1].split('.')[0] in j == False:
             print(i,j)
-    
-    print(len(save_paths), len(inputs))
 
     logger.info('Solving %d problems' % len(inputs))
     if args_.lax:
