@@ -17,6 +17,8 @@ import logging
 import logzero
 from logzero import logger
 
+MAX_TIME = 3600
+
 class State():
     def __init__(self, objective_value, cumulative_energy_consumption, solution):
         self.objective_value = objective_value
@@ -248,9 +250,13 @@ class LocalSearch():
 
         self.log('Searching')        
         k = 0
+        start_time = time.time()
         for k in range(self.max_iteration):
             candidates.add(State(best_value, best_sum, sol))
             #move
+            if time.time() - start_time > MAX_TIME:
+                break
+            
             for i in range(len(sol)):
                 for j in range(len(sol)):
                     if i != j:
